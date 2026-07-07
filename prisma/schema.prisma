@@ -1,0 +1,138 @@
+// Schema Prisma — Plataforma de Gestão de Grade MTT (Suprema Poker)
+// Fase 1: Modelagem. Base absoluta de armazenamento: Moeda = USD (1.00), Fuso = GMT-3.
+// A conversão cambial e de fuso é feita dinamicamente (Fase 2), lendo a tabela Handicap.
+// learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ---------------------------------------------------------------------------
+// RBAC — Usuários do backoffice
+// ---------------------------------------------------------------------------
+// SQLite não suporta enums nativos no Prisma, portanto os papéis são
+// armazenados como String. Valores válidos: "ADMIN" | "OPERACIONAL".
+//  - ADMIN:       edição total da grade, sistema e handicaps.
+//  - OPERACIONAL: visão idêntica ao Admin (inclui colunas financeiras/rake),
+//                 porém com a interface bloqueada para edição (read-only).
+// O "Usuário Front-end" (público/parceiros) NÃO é armazenado aqui — ele acessa
+// o portal externo sem autenticação e sem visão das colunas financeiras.
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String? // preenchido na fase de autenticação
+  role         String   @default("OPERACIONAL") // "ADMIN" | "OPERACIONAL"
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([role])
+}
+
+// ---------------------------------------------------------------------------
+// Handicap — Tabela manual de conversão (País → Multiplicador + Fuso)
+// ---------------------------------------------------------------------------
+// Gerida pelo Admin. Sem APIs externas. O usuário front-end escolhe um país e
+// o sistema aplica o multiplicador (câmbio) e o fuso (offset) sobre os valores
+// base em USD / GMT-3, de forma apenas visual.
+model Handicap {
+  id            String   @id @default(cuid())
+  country       String   @unique // Ex: "Brasil", "EUA", "Canadá"
+  currencyLabel String? // Ex: "BRL", "USD", "EUR"
+  multiplier    Float    @default(1.0) // Multiplicador cambial sobre o valor USD base
+  // Fuso horário aplicado sobre a base GMT-3.
+  utcOffset     Float    @default(-3) // Offset em horas em relação a UTC (ex: -3, -5, 8)
+  timezoneLabel String   @default("GMT-3") // Rótulo amigável (ex: "UTC-5", "GMT-3")
+  ianaTimezone  String? // Opcional: fuso IANA (ex: "America/Sao_Paulo")
+  active        Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([active])
+}
+
+// ---------------------------------------------------------------------------
+// Tournament — A grade de torneios (fonte da verdade)
+// ---------------------------------------------------------------------------
+// Todos os valores monetários são armazenados na BASE em USD (multiplicador 1.00)
+// e todos os horários na BASE GMT-3. A conversão é dinâmica no front-end.
+model Tournament {
+  id String @id @default(cuid())
+
+  // --- Agenda (grade semanal recorrente) ---
+  dayOfWeek     String // "MONDAY" | "TUESDAY" | ... (base em inglês, como na planilha "G MTTS")
+  dayOrder      Int      @default(0) // 1=Segunda ... 7=Domingo (para ordenação)
+  startTime     String // Horário base GMT-3 no formato "HH:mm"
+  startFraction Float? // Valor bruto da planilha (fração do dia, ex: 0.5833)
+
+  // --- Identificação ---
+  name      String // MTT MARKETING — nome de divulgação (ex: "#AS 25K WarmUp")
+  shortName String? // MTT — nome curto/interno (ex: "#AS WarmUp")
+  type      String // TYPE — "Main Event" | "Side Event"
+  gameType  String? // Game Type / MODALIDADE — "NLH" | "PLO5" | "PLO4" ...
+  koType    String? // K.O — "Progressive KO 1/3" | "Mystery Bounty 1/2" | "OFF" ...
+
+  // --- Financeiro (BASE USD) ---
+  gtd              Float? // PRIZE POOL USD — Garantido (GTD) em USD
+  buyIn            Float? // BUY-IN em USD
+  fee              Float? // FEE — taxa/rake como FRAÇÃO (ex: 0.1 = 10% do buy-in)
+  adminFee         Float? // ADMIN FEE — taxa administrativa como FRAÇÃO (ex: 0.02 = 2%)
+  reentry          Float? // REENTRY/REBUY em USD
+  addon            Float? // ADD-ON em USD
+  ticketAward      String? // TICKET AWARD (ex: "1 Ticket SPS 76-M")
+  personalizedAward String? // PERSONALIZED AWARD
+  payout           String? // PAYOUT (ex: "15% New", "20% Flat")
+  calculatedPayout String? // CALCULATED PAYOUT (ex: "Only buy-in", "Buy-in+Rebuy")
+  sizeBuyIn        String? // Size buy-in — faixa: "MICRO" | "LOW" | "MEDIUM" | "HIGH"
+  action           Float? // Action
+
+  // --- Estrutura / Stacks / Blinds ---
+  maxTable         Int? // MAX. TABLE — jogadores por mesa
+  structure        String? // STRUCTURE — "Turbo" | "Hyper turbo" | "Regular (padrão)" ...
+  stackInicial     Int? // CHIPS / STACK INICIAL
+  stackReentry     Int? // STACK REENTRY/REBUY
+  stackAddon       String? // STACK ADD-ON (pode conter número ou condição textual)
+  rebuyCondition   String? // REBUY CONDITION (ex: "No Limit", "No limit + double rebuy")
+  blindsEarly      Int? // Early game — blinds up (min)
+  blindsPostLateReg Int? // Pós Late Reg. — blinds up (min)
+  blindsFinalTable Int? // Final Table — blinds up (min)
+  breakLateReg     String? // BREAK LATE REG. (ex: "5 min")
+
+  // --- Late registration ---
+  lateRegLevels Int? // LATE REG. — quantidade de níveis
+  lateRegTime   String? // Hour late register — horário base GMT-3 "HH:mm"
+
+  // --- Metadados operacionais ---
+  numPlayers String? // Num. players (ex: "2-10000")
+  earlyBird  String? // EARLY BIRD
+  chat       String? // CHAT
+  timeBank   String? // TIME BANK
+
+  // --- Classificação para as abas do portal (Fase 4) ---
+  // "GRADE" (Main/Side) | "SATELLITE" | "FEATURED" | "SERIES" | "LIVE_SATELLITE"
+  category   String  @default("GRADE")
+  seriesName String? // nome da série, quando category = "SERIES"
+  featured   Boolean @default(false) // "Eventos em Destaque" (alimentado manualmente no Admin)
+
+  // --- Visibilidade (toggle do portal público) ---
+  visible Boolean @default(true)
+
+  // --- Rastreamento da origem (importação) ---
+  sourceSheet String? // "G MTTS" | "MTTS BRAZIL"
+  sourceRow   Int? // linha original na planilha (para auditoria)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([dayOrder, startTime])
+  @@index([type])
+  @@index([category])
+  @@index([visible])
+}

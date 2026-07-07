@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(npm *)",
+      "PowerShell(node \"C:\\\\Users\\\\bruno\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-bruno-Desktop-GradeMTT\\\\7da24af7-df9d-42f6-ae6d-4840b47721ba\\\\scratchpad\\\\inspect.mjs\")",
+      "PowerShell(node _inspect.mjs)",
+      "PowerShell(npx tsx scripts/import_grade.ts --dry-run)",
+      "PowerShell(npx tsx scripts/import_grade.ts --dry-run 2>&1 | Select-Object -First 12)",
+      "PowerShell(npx tsx scripts/import_grade.ts --dry-run; \"EXIT CODE: $LASTEXITCODE\")",
+      "PowerShell(npx tsc --noEmit; \"TSC EXIT: $LASTEXITCODE\")",
+      "PowerShell(npm install *)",
+      "PowerShell(git *)"
+    ]
+  }
+}

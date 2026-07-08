@@ -1,0 +1,373 @@
+"use client";
+
+import { useMemo, useState, useTransition } from "react";
+import type { TournamentModel } from "@/generated/prisma/models";
+import { computeField, WEEKDAYS, ptWeekday } from "@/lib/conversion";
+import { updateTournament } from "./actions";
+import { TOURNAMENT_FIELDS, HOT_FIELDS, type FieldMeta } from "./fields";
+
+export type TournamentRow = Omit<TournamentModel, "createdAt" | "updatedAt">;
+
+export function GradeTable({
+  tournaments,
+  canEdit,
+}: {
+  tournaments: TournamentRow[];
+  canEdit: boolean;
+}) {
+  const counts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const t of tournaments) map.set(t.dayOfWeek, (map.get(t.dayOfWeek) ?? 0) + 1);
+    return map;
+  }, [tournaments]);
+
+  const firstDay = WEEKDAYS.find((w) => (counts.get(w.en) ?? 0) > 0)?.en ?? "MONDAY";
+  const [day, setDay] = useState<string>(firstDay);
+  const [detail, setDetail] = useState<TournamentRow | null>(null);
+
+  const rows = useMemo(
+    () => tournaments.filter((t) => t.dayOfWeek === day),
+    [tournaments, day],
+  );
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Filtro por dia da semana */}
+      <div className="flex flex-wrap gap-1">
+        {WEEKDAYS.map((w) => {
+          const n = counts.get(w.en) ?? 0;
+          const active = w.en === day;
+          return (
+            <button
+              key={w.en}
+              onClick={() => setDay(w.en)}
+              className={
+                "rounded-md px-3 py-1.5 text-sm font-medium transition-colors " +
+                (active
+                  ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                  : "bg-white text-zinc-600 hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800")
+              }
+            >
+              {w.pt} <span className="opacity-60">({n})</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+        A coluna <strong>Ações</strong> (entradas p/ cobrir o GTD) e as taxas são
+        internas do Admin — não aparecem no portal público.
+      </p>
+
+      <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
+        <table className="w-full border-collapse text-sm">
+          <thead className="bg-zinc-50 text-left dark:bg-zinc-900">
+            <tr>
+              {HOT_FIELDS.map((f) => (
+                <th
+                  key={f.key}
+                  className="whitespace-nowrap px-2 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-500"
+                >
+                  {f.label}
+                </th>
+              ))}
+              <th className="whitespace-nowrap px-2 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+                Ações 🔒
+              </th>
+              <th className="px-2 py-2" />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <GradeRow
+                key={row.id}
+                row={row}
+                canEdit={canEdit}
+                onOpenDetail={() => setDetail(row)}
+              />
+            ))}
+            {rows.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={HOT_FIELDS.length + 2}
+                  className="px-3 py-6 text-center text-zinc-500"
+                >
+                  Nenhum torneio em {ptWeekday(day)}.
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+
+      {detail ? (
+        <DetailDrawer row={detail} canEdit={canEdit} onClose={() => setDetail(null)} />
+      ) : null}
+    </div>
+  );
+}
+
+function GradeRow({
+  row,
+  canEdit,
+  onOpenDetail,
+}: {
+  row: TournamentRow;
+  canEdit: boolean;
+  onOpenDetail: () => void;
+}) {
+  const field = computeField(
+    { buyIn: row.buyIn, fee: row.fee, adminFee: row.adminFee, gtd: row.gtd },
+    { includeAdminFee: true },
+  );
+
+  return (
+    <tr className="border-t border-zinc-100 dark:border-zinc-800">
+      {HOT_FIELDS.map((f) => (
+        <td key={f.key} className="px-2 py-1 align-top">
+          <EditableCell id={row.id} field={f} value={row[f.key as keyof TournamentRow]} canEdit={canEdit} />
+        </td>
+      ))}
+      <td className="px-2 py-1 text-center font-medium text-emerald-700 dark:text-emerald-400">
+        {field?.requiredEntries ?? "—"}
+      </td>
+      <td className="px-2 py-1 text-right">
+        <button
+          onClick={onOpenDetail}
+          className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+          title="Ver / editar todos os campos"
+        >
+          ⋯
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+type CellValue = string | number | boolean | null;
+
+function EditableCell({
+  id,
+  field,
+  value,
+  canEdit,
+}: {
+  id: string;
+  field: FieldMeta;
+  value: CellValue;
+  canEdit: boolean;
+}) {
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function commit(next: string | boolean) {
+    setError(null);
+    const current = field.kind === "bool" ? Boolean(value) : String(value ?? "");
+    const nextComparable = field.kind === "bool" ? Boolean(next) : String(next);
+    if (current === nextComparable) return;
+
+    startTransition(async () => {
+      const res = await updateTournament(id, { [field.key]: next });
+      if (!res.ok) setError(res.error ?? "Erro ao salvar.");
+    });
+  }
+
+  const base =
+    "w-full rounded border bg-transparent px-1.5 py-1 text-sm outline-none " +
+    (error
+      ? "border-red-500"
+      : pending
+        ? "border-amber-400"
+        : "border-transparent hover:border-zinc-300 focus:border-zinc-500 dark:hover:border-zinc-700");
+
+  if (field.kind === "bool") {
+    return (
+      <input
+        type="checkbox"
+        defaultChecked={Boolean(value)}
+        disabled={!canEdit || pending}
+        onChange={(e) => commit(e.target.checked)}
+        className="h-4 w-4"
+        title={error ?? undefined}
+      />
+    );
+  }
+
+  if (field.kind === "select") {
+    return (
+      <select
+        defaultValue={String(value ?? "")}
+        disabled={!canEdit || pending}
+        onChange={(e) => commit(e.target.value)}
+        className={base + " min-w-[7rem]"}
+        title={error ?? undefined}
+      >
+        {field.options?.map((opt) => (
+          <option key={opt} value={opt}>
+            {field.key === "dayOfWeek" ? ptWeekday(opt) : opt}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  const isNumeric = field.kind === "number" || field.kind === "int";
+  const widthCls = field.key === "name" ? "min-w-[16rem]" : isNumeric ? "w-24" : "min-w-[8rem]";
+
+  return (
+    <input
+      type={isNumeric ? "number" : "text"}
+      step={field.kind === "int" ? "1" : "any"}
+      defaultValue={value == null ? "" : String(value)}
+      disabled={!canEdit || pending}
+      onBlur={(e) => commit(e.target.value)}
+      className={base + " " + widthCls}
+      title={error ?? undefined}
+    />
+  );
+}
+
+function DetailDrawer({
+  row,
+  canEdit,
+  onClose,
+}: {
+  row: TournamentRow;
+  canEdit: boolean;
+  onClose: () => void;
+}) {
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const sections = useMemo(() => {
+    const map = new Map<string, FieldMeta[]>();
+    for (const f of TOURNAMENT_FIELDS) {
+      const arr = map.get(f.section) ?? [];
+      arr.push(f);
+      map.set(f.section, arr);
+    }
+    return [...map.entries()];
+  }, []);
+
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!canEdit) return;
+    const fd = new FormData(e.currentTarget);
+    const patch: Record<string, unknown> = {};
+    for (const f of TOURNAMENT_FIELDS) {
+      patch[f.key] = f.kind === "bool" ? fd.has(f.key) : fd.get(f.key);
+    }
+    setError(null);
+    startTransition(async () => {
+      const res = await updateTournament(row.id, patch);
+      if (!res.ok) setError(res.error ?? "Erro ao salvar.");
+      else onClose();
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
+      <div
+        className="h-full w-full max-w-2xl overflow-y-auto bg-white p-6 shadow-xl dark:bg-zinc-950"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+            {row.name}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-sm text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+          >
+            Fechar ✕
+          </button>
+        </div>
+
+        {!canEdit ? (
+          <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+            Somente leitura (Operacional).
+          </p>
+        ) : null}
+
+        <form onSubmit={onSubmit}>
+          <fieldset disabled={!canEdit} className="flex flex-col gap-5">
+            {sections.map(([section, fields]) => (
+              <div key={section}>
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                  {section}
+                </h3>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {fields.map((f) => (
+                    <DrawerField key={f.key} field={f} value={row[f.key as keyof TournamentRow]} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </fieldset>
+
+          {error ? (
+            <p role="alert" className="mt-4 text-sm text-red-600">
+              {error}
+            </p>
+          ) : null}
+
+          {canEdit ? (
+            <div className="sticky bottom-0 mt-6 flex gap-2 bg-white py-3 dark:bg-zinc-950">
+              <button
+                type="submit"
+                disabled={pending}
+                className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+              >
+                {pending ? "Salvando…" : "Salvar alterações"}
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+              >
+                Cancelar
+              </button>
+            </div>
+          ) : null}
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function DrawerField({ field, value }: { field: FieldMeta; value: CellValue }) {
+  const cls =
+    "w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-zinc-500 disabled:opacity-70 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100";
+
+  if (field.kind === "bool") {
+    return (
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" name={field.key} defaultChecked={Boolean(value)} className="h-4 w-4" />
+        <span className="text-zinc-700 dark:text-zinc-300">{field.label}</span>
+      </label>
+    );
+  }
+
+  return (
+    <label className="flex flex-col gap-1 text-sm">
+      <span className="font-medium text-zinc-600 dark:text-zinc-400">{field.label}</span>
+      {field.kind === "select" ? (
+        <select name={field.key} defaultValue={String(value ?? "")} className={cls}>
+          {field.options?.map((opt) => (
+            <option key={opt} value={opt}>
+              {field.key === "dayOfWeek" ? ptWeekday(opt) : opt}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          type={field.kind === "number" || field.kind === "int" ? "number" : "text"}
+          step={field.kind === "int" ? "1" : "any"}
+          name={field.key}
+          defaultValue={value == null ? "" : String(value)}
+          className={cls}
+        />
+      )}
+    </label>
+  );
+}

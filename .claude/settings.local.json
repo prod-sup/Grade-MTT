@@ -13,7 +13,16 @@
       "Bash(npx prisma *)",
       "Bash(npm run *)",
       "Bash(npx tsx *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(echo \"dev PID $!\")",
+      "Bash(node /tmp/mint.js \"cmrc6xe8q0000q8oeslqokcl9\" \"cmrc6xe950001q8oehyfa21xv\")",
+      "Read(//tmp/**)",
+      "Bash(rm -f scripts/_ids.ts /tmp/mint.js /tmp/cookies.txt /tmp/gradedev.log)",
+      "Bash(taskkill //F //PID 244)",
+      "Bash(pkill -f \"next dev\")",
+      "PowerShell($c = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue; if \\($c\\) { $c.OwningProcess | Select-Object -Unique | ForEach-Object { Stop-Process -Id $_ -Force; Write-Output \"parei PID $_\" } } else { Write-Output \"nada escutando na 3000\" })"
     ]
   }
 }

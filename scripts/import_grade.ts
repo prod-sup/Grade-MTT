@@ -27,6 +27,7 @@ import "dotenv/config";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import * as XLSX from "xlsx";
+import { hashPassword } from "../src/lib/auth/password";
 
 // ---------------------------------------------------------------------------
 // Configuração
@@ -419,6 +420,10 @@ function buildHandicaps(
 // ---------------------------------------------------------------------------
 // Usuários (RBAC)
 // ---------------------------------------------------------------------------
+// Senha padrão dos usuários demo (defina SEED_PASSWORD no ambiente para trocar).
+// ⚠️ Apenas para desenvolvimento — troque em produção.
+const DEFAULT_PASSWORD = process.env.SEED_PASSWORD ?? "suprema123";
+
 const USERS = [
   { email: "admin@suprema.group", name: "Administrador", role: "ADMIN" },
   { email: "operacional@suprema.group", name: "Operacional", role: "OPERACIONAL" },
@@ -488,15 +493,33 @@ async function main() {
   try {
     console.log("\n💾 Gravando no banco...");
 
-    // Usuários — upsert (não destrói credenciais existentes).
+    // Usuários — cria se não existir; se existir sem senha, define a senha demo;
+    // NUNCA sobrescreve uma senha já definida.
     for (const u of USERS) {
-      await prisma.user.upsert({
-        where: { email: u.email },
-        update: { name: u.name, role: u.role },
-        create: { email: u.email, name: u.name, role: u.role },
-      });
+      const existing = await prisma.user.findUnique({ where: { email: u.email } });
+      if (existing) {
+        await prisma.user.update({
+          where: { email: u.email },
+          data: {
+            name: u.name,
+            role: u.role,
+            passwordHash: existing.passwordHash ?? hashPassword(DEFAULT_PASSWORD),
+          },
+        });
+      } else {
+        await prisma.user.create({
+          data: {
+            email: u.email,
+            name: u.name,
+            role: u.role,
+            passwordHash: hashPassword(DEFAULT_PASSWORD),
+          },
+        });
+      }
     }
-    console.log(`  ✔ Usuários: ${USERS.length}`);
+    console.log(
+      `  ✔ Usuários: ${USERS.length} (senha demo p/ contas sem senha: "${DEFAULT_PASSWORD}")`,
+    );
 
     // Handicaps — reseed limpo.
     await prisma.handicap.deleteMany();

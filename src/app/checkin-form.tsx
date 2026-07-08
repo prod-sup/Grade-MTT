@@ -48,6 +48,19 @@ export function CheckinForm({
 
       <label className="flex flex-col gap-1 text-sm">
         <span className="font-medium text-zinc-700 dark:text-zinc-300">
+          WhatsApp
+        </span>
+        <input
+          type="tel"
+          name="phone"
+          placeholder="Opcional — para avisos de torneios"
+          autoComplete="tel"
+          className={inputCls}
+        />
+      </label>
+
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="font-medium text-zinc-700 dark:text-zinc-300">
           País (moeda)
         </span>
         <select

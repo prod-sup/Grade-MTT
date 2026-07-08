@@ -1,34 +1,120 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import type { TournamentModel } from "@/generated/prisma/models";
 import { computeField, WEEKDAYS, ptWeekday } from "@/lib/conversion";
-import { updateTournament } from "./actions";
+import { copyDay, copyWeek, updateTournament } from "./actions";
 import { TOURNAMENT_FIELDS, HOT_FIELDS, type FieldMeta } from "./fields";
 
-export type TournamentRow = Omit<TournamentModel, "createdAt" | "updatedAt">;
+// eventDate (Date) é excluído: não é célula editável desta tabela e não cabe no
+// tipo CellValue (string|number|boolean|null). É tratado nas telas de mês/arquivo.
+export type TournamentRow = Omit<
+  TournamentModel,
+  "createdAt" | "updatedAt" | "eventDate"
+>;
 
 export function GradeTable({
   tournaments,
   canEdit,
+  weekStartISO,
+  sourceByDay,
+  initialDay,
 }: {
   tournaments: TournamentRow[];
   canEdit: boolean;
+  /** Segunda-feira (YYYY-MM-DD, UTC) da semana exibida — p/ rotular a data de cada dia. */
+  weekStartISO?: string;
+  /** Por dia da semana (EN): data-fonte a copiar (dia anterior mais recente) ou null. */
+  sourceByDay?: Record<string, string | null>;
+  /** Dia (EN) a focar inicialmente (ex.: 1º dia do mês ao "criar mês seguinte"). */
+  initialDay?: string;
 }) {
+  const router = useRouter();
+  const [copying, startCopy] = useTransition();
+  const [copyMsg, setCopyMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
   const counts = useMemo(() => {
     const map = new Map<string, number>();
     for (const t of tournaments) map.set(t.dayOfWeek, (map.get(t.dayOfWeek) ?? 0) + 1);
     return map;
   }, [tournaments]);
 
+  // Data concreta (DD/MM) de cada dia da semana exibida.
+  const dateByWeekday = useMemo(() => {
+    const map = new Map<string, string>();
+    if (!weekStartISO) return map;
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(weekStartISO);
+    if (!m) return map;
+    const start = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+    for (const w of WEEKDAYS) {
+      const d = new Date(start.getTime() + (w.order - 1) * 86_400_000);
+      map.set(
+        w.en,
+        `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}`,
+      );
+    }
+    return map;
+  }, [weekStartISO]);
+
   const firstDay = WEEKDAYS.find((w) => (counts.get(w.en) ?? 0) > 0)?.en ?? "MONDAY";
-  const [day, setDay] = useState<string>(firstDay);
+  const [day, setDay] = useState<string>(
+    initialDay && WEEKDAYS.some((w) => w.en === initialDay) ? initialDay : firstDay,
+  );
   const [detail, setDetail] = useState<TournamentRow | null>(null);
 
   const rows = useMemo(
     () => tournaments.filter((t) => t.dayOfWeek === day),
     [tournaments, day],
   );
+
+  // ISO (YYYY-MM-DD) do dia selecionado e do próximo dia — para copiar/avançar.
+  const weekStart = useMemo(() => {
+    const m = weekStartISO ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(weekStartISO) : null;
+    return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])) : null;
+  }, [weekStartISO]);
+
+  const dayOrder = WEEKDAYS.find((w) => w.en === day)?.order ?? 1;
+  const selectedISO = weekStart
+    ? new Date(weekStart.getTime() + (dayOrder - 1) * 86_400_000).toISOString().slice(0, 10)
+    : null;
+  const nextDayEn = WEEKDAYS.find((w) => w.order === dayOrder + 1)?.en ?? null;
+  const source = sourceByDay?.[day] ?? null;
+  const dayEmpty = (counts.get(day) ?? 0) === 0;
+
+  function fmtISO(iso: string): string {
+    const [y, mo, d] = iso.split("-");
+    return `${d}/${mo}/${y}`;
+  }
+
+  function runCopyDay() {
+    if (!selectedISO) return;
+    setCopyMsg(null);
+    startCopy(async () => {
+      const res = await copyDay(selectedISO);
+      if (res.ok) {
+        setCopyMsg({ ok: true, text: `Copiado de ${res.sourceISO ? fmtISO(res.sourceISO) : ""} — ${res.created} torneios.` });
+        if (nextDayEn) setDay(nextDayEn); // avança para o próximo dia
+        router.refresh();
+      } else {
+        setCopyMsg({ ok: false, text: res.error ?? "Falha ao copiar o dia." });
+      }
+    });
+  }
+
+  function runCopyWeek() {
+    if (!weekStartISO) return;
+    setCopyMsg(null);
+    startCopy(async () => {
+      const res = await copyWeek(weekStartISO);
+      if (res.ok) {
+        setCopyMsg({ ok: true, text: `Semana preenchida: ${res.days} dias, ${res.created} torneios.` });
+        router.refresh();
+      } else {
+        setCopyMsg({ ok: false, text: res.error ?? "Falha ao copiar a semana." });
+      }
+    });
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -48,11 +134,54 @@ export function GradeTable({
                   : "bg-white text-zinc-600 hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800")
               }
             >
-              {w.pt} <span className="opacity-60">({n})</span>
+              {w.pt}
+              {dateByWeekday.get(w.en) ? (
+                <span className="opacity-60"> {dateByWeekday.get(w.en)}</span>
+              ) : null}{" "}
+              <span className="opacity-60">({n})</span>
             </button>
           );
         })}
       </div>
+
+      {/* Construtor de mês: cópia dia a dia / semana anterior (ADMIN, dia vazio) */}
+      {canEdit && dayEmpty ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed border-emerald-300 bg-emerald-50 px-3 py-2 dark:border-emerald-800 dark:bg-emerald-950/40">
+          <span className="text-sm text-emerald-800 dark:text-emerald-300">
+            {ptWeekday(day)} está vazio.
+          </span>
+          <button
+            onClick={runCopyDay}
+            disabled={copying || !source || !selectedISO}
+            className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+            title={source ? `Copia ${ptWeekday(day)} de ${fmtISO(source)}` : "Sem dia anterior para copiar"}
+          >
+            {copying
+              ? "Copiando…"
+              : source
+                ? `Copiar último ${ptWeekday(day)} (${fmtISO(source)})`
+                : `Sem ${ptWeekday(day)} anterior`}
+          </button>
+          <button
+            onClick={runCopyWeek}
+            disabled={copying || !weekStartISO}
+            className="rounded-md border border-emerald-600 px-3 py-1.5 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-emerald-400 dark:hover:bg-emerald-900/40"
+            title="Preenche a semana inteira copiando a semana anterior"
+          >
+            Copiar semana anterior completa
+          </button>
+          {copyMsg ? (
+            <span className={"text-xs " + (copyMsg.ok ? "text-emerald-700 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
+              {copyMsg.text}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+      {canEdit && !dayEmpty && copyMsg ? (
+        <p className={"text-xs " + (copyMsg.ok ? "text-emerald-700 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
+          {copyMsg.text}
+        </p>
+      ) : null}
 
       <p className="text-xs text-zinc-500 dark:text-zinc-400">
         A coluna <strong>Ações</strong> (entradas p/ cobrir o GTD) e as taxas são

@@ -69,8 +69,14 @@ model Handicap {
 model Tournament {
   id String @id @default(cuid())
 
-  // --- Agenda (grade semanal recorrente) ---
-  dayOfWeek     String // "MONDAY" | "TUESDAY" | ... (base em inglês, como na planilha "G MTTS")
+  // --- Agenda (grade mensal DATADA) ---
+  // A grade é mensal e datada: cada mês difere (festivais, séries como a SPS).
+  // O site exibe do mês atual até dezembro; meses fechados ficam com
+  // archived=true (histórico, somem do site). dayOfWeek/dayOrder são mantidos
+  // porque o gerador "criar mês seguinte" replica a grade dia a dia.
+  eventDate     DateTime? // Data concreta do torneio (00:00 UTC do dia)
+  archived      Boolean   @default(false) // mês fechado: sai do site, mantém histórico
+  dayOfWeek     String // "MONDAY" | "TUESDAY" | ... (base em inglês)
   dayOrder      Int    @default(0) // 1=Segunda ... 7=Domingo (para ordenação)
   startTime     String // Horário base GMT-3 no formato "HH:mm"
   startFraction Float? // Valor bruto da planilha (fração do dia, ex: 0.5833)
@@ -134,6 +140,8 @@ model Tournament {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([eventDate])
+  @@index([archived])
   @@index([dayOrder, startTime])
   @@index([type])
   @@index([category])
@@ -153,6 +161,7 @@ model AccessLog {
   name          String // "Nome" do formulário de entrada
   email         String
   club          String? // "Clube" do formulário
+  phone         String? // WhatsApp/Telefone (opcional) — dormante p/ Omnichannel (Roadmap V2, seção 3)
   timezoneLabel String? // "Fuso Horário" selecionado no dropdown
   // Relacionamento com a tabela de Handicaps. Opcional + SetNull para não
   // bloquear a exclusão de um handicap que já possua logs de acesso.
@@ -165,4 +174,75 @@ model AccessLog {
   @@index([email])
   @@index([handicapId])
   @@map("AccessLogs")
+}
+
+// ---------------------------------------------------------------------------
+// SeriesImport — Staging do UPLOAD de Excel de Séries (Roadmap V2, item 4)
+// ---------------------------------------------------------------------------
+// O admin sobe um Excel (formato Horizontal do export) com o dia/bloco de uma
+// série. Cada linha é ENCENADA aqui com um status de cor antes de aplicar:
+//   GREEN  = substitui um base com confiança (mesmo slot + núcleo do nome)
+//   YELLOW = dúvida (base no slot mas nome ambíguo / vários candidatos)
+//   RED    = inédito (sem base no slot) → cria, não exclui nada
+//   SAME   = idêntico a um torneio já existente (off-série) → sem ação
+// Nada é aplicado automaticamente: o admin confirma linha a linha. Ao confirmar
+// um GREEN, o torneio base é EXCLUÍDO e a linha da série entra (category=SERIES).
+model SeriesImport {
+  id         String            @id @default(cuid())
+  seriesName String // ex.: "SPS"
+  filename   String?
+  createdAt  DateTime          @default(now())
+  createdBy  String? // User.id do admin que subiu
+  rows       SeriesImportRow[]
+
+  @@index([createdAt])
+}
+
+model SeriesImportRow {
+  id       String       @id @default(cuid())
+  importId String
+  import   SeriesImport @relation(fields: [importId], references: [id], onDelete: Cascade)
+
+  rowIndex Int // ordem no arquivo (para a navegação guiada)
+
+  // --- Campos-chave para exibição e match (espelham o Tournament) ---
+  eventDate DateTime
+  dayOfWeek String
+  dayOrder  Int
+  startTime String
+  name      String
+  shortName String?
+  type      String
+  gtd       Float?
+  buyIn     Float?
+
+  // --- Staging ---
+  status      String // "GREEN" | "YELLOW" | "RED" | "SAME"
+  matchBaseId String? // Tournament.id do base candidato (green/yellow)
+  reviewNote  String?
+  resolved    Boolean @default(false) // já confirmado/decidido?
+  // JSON com TODOS os campos do torneio p/ criar ao confirmar.
+  payload     String
+
+  @@index([importId, rowIndex])
+  @@index([importId, resolved])
+}
+
+// ---------------------------------------------------------------------------
+// MarketingBanner — Flyers/banners de marketing gerados (Roadmap V2, seção 4)
+// ---------------------------------------------------------------------------
+// SQLite/Prisma não suporta enum nativo, então `type` é String.
+//   type válido: "SINGLE" | "DOUBLE" | "TRIPLE" | "LIST"
+//   (layouts: 1 torneio, 2, 3 empilhados e lista/cronograma até 12 linhas)
+model MarketingBanner {
+  id        String   @id @default(cuid())
+  title     String
+  imageUrl  String // caminho/URL da imagem gerada (web-to-image)
+  type      String // "SINGLE" | "DOUBLE" | "TRIPLE" | "LIST"
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+  @@index([active])
 }

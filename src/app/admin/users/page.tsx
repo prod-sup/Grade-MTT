@@ -31,6 +31,7 @@ export default async function UsersPage() {
             <tr>
               <Th>Nome</Th>
               <Th>E-mail</Th>
+              <Th>WhatsApp</Th>
               <Th>Clube</Th>
               <Th>País (handicap)</Th>
               <Th>Fuso</Th>
@@ -42,6 +43,7 @@ export default async function UsersPage() {
               <tr key={l.id} className="border-t border-zinc-100 dark:border-zinc-800">
                 <Td className="font-medium">{l.name}</Td>
                 <Td>{l.email}</Td>
+                <Td>{l.phone ?? "—"}</Td>
                 <Td>{l.club ?? "—"}</Td>
                 <Td>{l.handicap?.country ?? "—"}</Td>
                 <Td>{l.timezoneLabel ?? "—"}</Td>
@@ -50,7 +52,7 @@ export default async function UsersPage() {
             ))}
             {logs.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-3 py-6 text-center text-zinc-500">
+                <td colSpan={7} className="px-3 py-6 text-center text-zinc-500">
                   Nenhum check-in ainda.
                 </td>
               </tr>

@@ -39,6 +39,7 @@ export async function checkin(
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const club = String(formData.get("club") ?? "").trim() || null;
+  const phone = String(formData.get("phone") ?? "").trim() || null;
   const handicapId = String(formData.get("handicapId") ?? "").trim();
   const fusoValue = String(formData.get("fuso") ?? "").trim();
 
@@ -64,10 +65,10 @@ export async function checkin(
   const log = existing
     ? await prisma.accessLog.update({
         where: { id: existing.id },
-        data: { name, club, handicapId, timezoneLabel },
+        data: { name, club, phone, handicapId, timezoneLabel },
       })
     : await prisma.accessLog.create({
-        data: { name, email, club, handicapId, timezoneLabel },
+        data: { name, email, club, phone, handicapId, timezoneLabel },
       });
 
   await setVisitorCookie({

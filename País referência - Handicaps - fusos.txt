@@ -1,0 +1,23 @@
+Suprema Brasil - handcap 5x - fuso GMT-3 
+
+Suprema Europa - handcap 0,80x - fuso GMT +3
+
+Suprema Peru - handcap 3,50x - fuso GMT -5
+
+Suprema Asia - handcap 0,80x - fuso GMT -8
+
+Suprema México - handcap 18x -fuso GMT -6
+
+Suprema Argentina - handcap 0,80x - fuso GMT -3
+
+Suprema Panamá - handcap 0,80x - fuso GMT -5
+
+Suprema Colombia - handcap 5x - fuso GMT -5
+
+Suprema Venezuela - handcap 0,80x - Fuso GMT -4
+
+Suprema Bolívia - handcap 10x - fuso GMT -4
+
+Suprema Uruguai - handcap 0,80x - fuso GMT -3
+
+Suprema Filipinas - handcap 60x - fuso GMT -8

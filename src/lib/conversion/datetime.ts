@@ -132,3 +132,27 @@ export function formatFullDate(date: Date): string {
   const yyyy = date.getFullYear();
   return `${weekday} - ${dd}/${mm}/${yyyy}`;
 }
+
+/**
+ * Resolve a DATA CONCRETA de um torneio a partir do seu dia da semana (Roadmap
+ * V2): a grade é um template semanal, então a data do flyer é derivada aqui.
+ *
+ * @param dayOrder   Ordem do dia (1=Segunda … 7=Domingo, como no schema).
+ * @param weekOffset Deslocamento em semanas (0 = semana atual, +1 = próxima…).
+ * @param from       Data de referência (padrão: hoje). Recebida como parâmetro
+ *                   para ser testável/determinística.
+ * @returns Data (à meia-noite local) da próxima ocorrência daquele dia da
+ *          semana, deslocada por `weekOffset` semanas.
+ */
+export function nextDateForWeekday(
+  dayOrder: number,
+  weekOffset = 0,
+  from: Date = new Date(),
+): Date {
+  const jsDay = from.getDay(); // 0=Domingo … 6=Sábado
+  const todayOrder = jsDay === 0 ? 7 : jsDay; // 1=Segunda … 7=Domingo
+  const daysUntil = (((dayOrder - todayOrder) % 7) + 7) % 7; // 0 = hoje
+  const result = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  result.setDate(result.getDate() + daysUntil + weekOffset * 7);
+  return result;
+}

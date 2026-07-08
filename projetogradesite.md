@@ -37,8 +37,14 @@ O sistema terá 3 níveis de interação distintos:
   3. **Eventos em Destaque:** Painel alimentado manualmente no Admin para torneios focais.
   4. **Séries:** Grade isolada temporária de uma série específica em andamento.
   5. **Cronograma Satélites Live:** Grade voltada para qualificação de eventos presenciais.
-
-## 7. Fases de Execução para a IA (Claude Code)
+## 7. Fluxo de Acesso e Controle (Autenticação Simplificada)
+- **Tela de Entrada (Landing):** Rota raiz (`/`) com formulário para cadastro de sessão.
+  - Campos: Nome, E-mail, Clube, Handicap (dropdown), Fuso Horário (dropdown).
+  - Ação: Gravar log de acesso no banco (tabela `AccessLogs`) e criar sessão.
+- **Tabela `AccessLogs`:** Registrar `id`, `email`, `club`, `handicapId`, `lastSeen` (timestamp).
+- **Painel Admin (`/admin/users`):** Nova sub-página no painel admin para listar todos os usuários que realizaram o check-in na landing page.
+- **Gerenciamento de Sessão:** O sistema deve verificar se o usuário passou pela tela de entrada. Se não, redirecionar para a `/`.
+## 8. Fases de Execução para a IA (Claude Code)
 Atenção IA: Para otimização de contexto, o desenvolvimento deve seguir estritamente as fases abaixo. Aguarde validação do usuário ao final de cada fase antes de prosseguir.
 
 - **Fase 1: Setup, Modelagem e Carga de Dados Inicial:** 

@@ -55,6 +55,9 @@ model Handicap {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  // Logs de acesso do portal público que selecionaram este país/handicap.
+  accessLogs AccessLog[]
+
   @@index([active])
 }
 
@@ -68,7 +71,7 @@ model Tournament {
 
   // --- Agenda (grade semanal recorrente) ---
   dayOfWeek     String // "MONDAY" | "TUESDAY" | ... (base em inglês, como na planilha "G MTTS")
-  dayOrder      Int      @default(0) // 1=Segunda ... 7=Domingo (para ordenação)
+  dayOrder      Int    @default(0) // 1=Segunda ... 7=Domingo (para ordenação)
   startTime     String // Horário base GMT-3 no formato "HH:mm"
   startFraction Float? // Valor bruto da planilha (fração do dia, ex: 0.5833)
 
@@ -80,30 +83,30 @@ model Tournament {
   koType    String? // K.O — "Progressive KO 1/3" | "Mystery Bounty 1/2" | "OFF" ...
 
   // --- Financeiro (BASE USD) ---
-  gtd              Float? // PRIZE POOL USD — Garantido (GTD) em USD
-  buyIn            Float? // BUY-IN em USD
-  fee              Float? // FEE — taxa/rake como FRAÇÃO (ex: 0.1 = 10% do buy-in)
-  adminFee         Float? // ADMIN FEE — taxa administrativa como FRAÇÃO (ex: 0.02 = 2%)
-  reentry          Float? // REENTRY/REBUY em USD
-  addon            Float? // ADD-ON em USD
-  ticketAward      String? // TICKET AWARD (ex: "1 Ticket SPS 76-M")
+  gtd               Float? // PRIZE POOL USD — Garantido (GTD) em USD
+  buyIn             Float? // BUY-IN em USD
+  fee               Float? // FEE — taxa/rake como FRAÇÃO (ex: 0.1 = 10% do buy-in)
+  adminFee          Float? // ADMIN FEE — taxa administrativa como FRAÇÃO (ex: 0.02 = 2%)
+  reentry           Float? // REENTRY/REBUY em USD
+  addon             Float? // ADD-ON em USD
+  ticketAward       String? // TICKET AWARD (ex: "1 Ticket SPS 76-M")
   personalizedAward String? // PERSONALIZED AWARD
-  payout           String? // PAYOUT (ex: "15% New", "20% Flat")
-  calculatedPayout String? // CALCULATED PAYOUT (ex: "Only buy-in", "Buy-in+Rebuy")
-  sizeBuyIn        String? // Size buy-in — faixa: "MICRO" | "LOW" | "MEDIUM" | "HIGH"
-  action           Float? // Action
+  payout            String? // PAYOUT (ex: "15% New", "20% Flat")
+  calculatedPayout  String? // CALCULATED PAYOUT (ex: "Only buy-in", "Buy-in+Rebuy")
+  sizeBuyIn         String? // Size buy-in — faixa: "MICRO" | "LOW" | "MEDIUM" | "HIGH"
+  action            Float? // Action
 
   // --- Estrutura / Stacks / Blinds ---
-  maxTable         Int? // MAX. TABLE — jogadores por mesa
-  structure        String? // STRUCTURE — "Turbo" | "Hyper turbo" | "Regular (padrão)" ...
-  stackInicial     Int? // CHIPS / STACK INICIAL
-  stackReentry     Int? // STACK REENTRY/REBUY
-  stackAddon       String? // STACK ADD-ON (pode conter número ou condição textual)
-  rebuyCondition   String? // REBUY CONDITION (ex: "No Limit", "No limit + double rebuy")
-  blindsEarly      Int? // Early game — blinds up (min)
+  maxTable          Int? // MAX. TABLE — jogadores por mesa
+  structure         String? // STRUCTURE — "Turbo" | "Hyper turbo" | "Regular (padrão)" ...
+  stackInicial      Int? // CHIPS / STACK INICIAL
+  stackReentry      Int? // STACK REENTRY/REBUY
+  stackAddon        String? // STACK ADD-ON (pode conter número ou condição textual)
+  rebuyCondition    String? // REBUY CONDITION (ex: "No Limit", "No limit + double rebuy")
+  blindsEarly       Int? // Early game — blinds up (min)
   blindsPostLateReg Int? // Pós Late Reg. — blinds up (min)
-  blindsFinalTable Int? // Final Table — blinds up (min)
-  breakLateReg     String? // BREAK LATE REG. (ex: "5 min")
+  blindsFinalTable  Int? // Final Table — blinds up (min)
+  breakLateReg      String? // BREAK LATE REG. (ex: "5 min")
 
   // --- Late registration ---
   lateRegLevels Int? // LATE REG. — quantidade de níveis
@@ -135,4 +138,31 @@ model Tournament {
   @@index([type])
   @@index([category])
   @@index([visible])
+}
+
+// ---------------------------------------------------------------------------
+// AccessLog — Check-in do portal público (Autenticação Simplificada, seção 7)
+// ---------------------------------------------------------------------------
+// Registrado na tela de entrada (rota `/`). Não é autenticação real: apenas
+// grava quem acessou, qual clube e qual handicap/fuso foi escolhido, e cria a
+// sessão. Alimenta o painel Admin "/admin/users".
+//   Campos da spec: id, email, club, handicapId, lastSeen.
+//   Adicionais (coletados pelo formulário da landing): name, timezoneLabel.
+model AccessLog {
+  id            String    @id @default(cuid())
+  name          String // "Nome" do formulário de entrada
+  email         String
+  club          String? // "Clube" do formulário
+  timezoneLabel String? // "Fuso Horário" selecionado no dropdown
+  // Relacionamento com a tabela de Handicaps. Opcional + SetNull para não
+  // bloquear a exclusão de um handicap que já possua logs de acesso.
+  handicapId    String?
+  handicap      Handicap? @relation(fields: [handicapId], references: [id], onDelete: SetNull)
+  // Primeiro acesso e último acesso (atualizado a cada novo check-in).
+  createdAt     DateTime  @default(now())
+  lastSeen      DateTime  @default(now()) @updatedAt
+
+  @@index([email])
+  @@index([handicapId])
+  @@map("AccessLogs")
 }

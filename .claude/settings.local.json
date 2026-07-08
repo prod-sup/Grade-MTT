@@ -9,7 +9,11 @@
       "PowerShell(npx tsx scripts/import_grade.ts --dry-run; \"EXIT CODE: $LASTEXITCODE\")",
       "PowerShell(npx tsc --noEmit; \"TSC EXIT: $LASTEXITCODE\")",
       "PowerShell(npm install *)",
-      "PowerShell(git *)"
+      "PowerShell(git *)",
+      "Bash(npx prisma *)",
+      "Bash(npm run *)",
+      "Bash(npx tsx *)",
+      "Bash(git add *)"
     ]
   }
 }

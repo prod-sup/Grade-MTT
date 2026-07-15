@@ -27,7 +27,20 @@
       "Bash(cat)",
       "Bash(node /tmp/mint4.js \"cmrce8mid00001goewvqghobn\" \"cmrc6xe8q0000q8oeslqokcl9\")",
       "PowerShell($c = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue; if \\($c\\) { $c.OwningProcess | Select-Object -Unique | ForEach-Object { Stop-Process -Id $_ -Force; Write-Output \"parei PID $_\" } } else { Write-Output \"nada na 3000\" })",
-      "Bash(echo \"dev iniciado \\(wrapper PID $!\\)\")"
+      "Bash(echo \"dev iniciado \\(wrapper PID $!\\)\")",
+      "Bash(node *)",
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)",
+      "Bash(echo \"=== eslint exit: $? ===\")",
+      "Bash(grep -iA6 \"error\\\\|series\\\\|500\")",
+      "Bash(taskkill //PID 19572 //F)",
+      "Bash(echo \"novo dev PID: $!\")",
+      "Bash(break)",
+      "Bash(kill 2370)",
+      "Bash(git reset *)",
+      "Bash(echo \"dev PID: $!\")",
+      "Bash(taskkill //PID 20136 //F)",
+      "Bash(taskkill //PID 2577 //F)"
     ]
   }
 }

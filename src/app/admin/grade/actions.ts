@@ -9,7 +9,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isAdmin } from "@/lib/auth/dal";
 import { WEEKDAYS } from "@/lib/conversion";
-import { EDITABLE_KEYS, FIELD_KINDS, TOURNAMENT_FIELDS } from "./fields";
+import { EDITABLE_KEYS, FIELD_KINDS, TOURNAMENT_FIELDS, VALUE_TYPES } from "./fields";
 
 export interface ActionResult {
   ok: boolean;
@@ -35,7 +35,23 @@ function coerce(key: string, raw: unknown): Coerced {
   const s = raw == null ? "" : String(raw).trim();
 
   if (kind === "select") {
+    if (s === "") {
+      if (REQUIRED.has(key)) return { error: `"${key}" não pode ficar vazio.` };
+      return { value: null };
+    }
     if (!OPTIONS[key]?.includes(s)) return { error: `Valor inválido em "${key}".` };
+
+    const valueType = VALUE_TYPES[key];
+    if (valueType === "int") {
+      const n = Number(s.replace(/\D/g, ""));
+      if (!Number.isFinite(n)) return { error: `Número inválido em "${key}".` };
+      return { value: n };
+    }
+    if (valueType === "percent") {
+      const n = Number(s.replace("%", "").replace(",", ".")) / 100;
+      if (!Number.isFinite(n)) return { error: `Percentual inválido em "${key}".` };
+      return { value: n };
+    }
     return { value: s };
   }
 
@@ -274,4 +290,74 @@ export async function setMonthArchived(ym: string, archived: boolean): Promise<v
 
   revalidatePath("/admin/grade");
   revalidatePath("/portal");
+}
+
+// ---------------------------------------------------------------------------
+// Criar / duplicar / excluir um torneio individual
+// ---------------------------------------------------------------------------
+
+export interface MutationResult extends ActionResult {
+  id?: string;
+}
+
+/** Cria um torneio novo (em branco) na data informada. */
+export async function createTournament(dateISO: string): Promise<MutationResult> {
+  const actor = await getCurrentUser();
+  if (!isAdmin(actor)) {
+    return { ok: false, error: "Apenas administradores podem criar torneios." };
+  }
+  const target = parseISO(dateISO);
+  if (!target) return { ok: false, error: "Data inválida." };
+
+  const dayEn = WEEKDAY_EN[weekdayOrder(target)];
+  const created = await prisma.tournament.create({
+    data: {
+      eventDate: target,
+      dayOfWeek: dayEn,
+      dayOrder: weekdayOrder(target),
+      startTime: "00:00",
+      name: "Novo torneio",
+      type: "Main Event",
+      category: "GRADE",
+    },
+  });
+
+  revalidatePath("/admin/grade");
+  return { ok: true, id: created.id };
+}
+
+/** Duplica um torneio existente (nova linha, mesmo dia/data). */
+export async function duplicateTournament(id: string): Promise<MutationResult> {
+  const actor = await getCurrentUser();
+  if (!isAdmin(actor)) {
+    return { ok: false, error: "Apenas administradores podem duplicar torneios." };
+  }
+  const row = await prisma.tournament.findUnique({ where: { id } });
+  if (!row) return { ok: false, error: "Torneio não encontrado." };
+
+  const clone: Record<string, unknown> = { ...row };
+  delete clone.id;
+  delete clone.createdAt;
+  delete clone.updatedAt;
+  clone.name = `${row.name} (cópia)`;
+  if (row.shortName) clone.shortName = `${row.shortName} (cópia)`;
+
+  const created = await prisma.tournament.create({ data: clone as never });
+  revalidatePath("/admin/grade");
+  return { ok: true, id: created.id };
+}
+
+/** Exclui um torneio permanentemente. */
+export async function deleteTournament(id: string): Promise<ActionResult> {
+  const actor = await getCurrentUser();
+  if (!isAdmin(actor)) {
+    return { ok: false, error: "Apenas administradores podem excluir torneios." };
+  }
+  try {
+    await prisma.tournament.delete({ where: { id } });
+  } catch {
+    return { ok: false, error: "Falha ao excluir o torneio." };
+  }
+  revalidatePath("/admin/grade");
+  return { ok: true };
 }

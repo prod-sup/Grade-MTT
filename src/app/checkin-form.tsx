@@ -3,6 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 import { checkin, type CheckinState } from "./portal/actions";
 import type { HandicapOption, FusoOption } from "@/lib/portal/context-options";
+import { GOLD_BUTTON } from "@/lib/ui/premium";
 
 const initialState: CheckinState = {};
 
@@ -32,24 +33,22 @@ export function CheckinForm({
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-zinc-700 dark:text-zinc-300">Nome</span>
+        <span className="font-medium text-gray-300">Nome</span>
         <input name="name" required autoFocus className={inputCls} />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-zinc-700 dark:text-zinc-300">E-mail</span>
+        <span className="font-medium text-gray-300">E-mail</span>
         <input type="email" name="email" required className={inputCls} />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-zinc-700 dark:text-zinc-300">Clube</span>
+        <span className="font-medium text-gray-300">Clube</span>
         <input name="club" placeholder="Opcional" className={inputCls} />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-zinc-700 dark:text-zinc-300">
-          WhatsApp
-        </span>
+        <span className="font-medium text-gray-300">WhatsApp</span>
         <input
           type="tel"
           name="phone"
@@ -60,9 +59,7 @@ export function CheckinForm({
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-zinc-700 dark:text-zinc-300">
-          País (moeda)
-        </span>
+        <span className="font-medium text-gray-300">País (moeda)</span>
         <select
           name="handicapId"
           value={handicapId}
@@ -70,7 +67,7 @@ export function CheckinForm({
           className={inputCls}
         >
           {handicaps.map((h) => (
-            <option key={h.id} value={h.id}>
+            <option key={h.id} value={h.id} className="bg-[#121316] text-white">
               {h.country}
               {h.currencyLabel ? ` (${h.currencyLabel})` : ""}
             </option>
@@ -79,9 +76,7 @@ export function CheckinForm({
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-zinc-700 dark:text-zinc-300">
-          Fuso horário
-        </span>
+        <span className="font-medium text-gray-300">Fuso horário</span>
         <select
           name="fuso"
           value={fuso}
@@ -89,7 +84,7 @@ export function CheckinForm({
           className={inputCls}
         >
           {fusos.map((f) => (
-            <option key={f.value} value={f.value}>
+            <option key={f.value} value={f.value} className="bg-[#121316] text-white">
               {f.label}
             </option>
           ))}
@@ -97,19 +92,12 @@ export function CheckinForm({
       </label>
 
       {state.error ? (
-        <p
-          role="alert"
-          className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300"
-        >
+        <p role="alert" className="rounded-md border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-300">
           {state.error}
         </p>
       ) : null}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="mt-2 rounded-md bg-zinc-900 px-4 py-2 font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-      >
+      <button type="submit" disabled={pending} className={`mt-2 px-4 py-2.5 disabled:opacity-60 ${GOLD_BUTTON}`}>
         {pending ? "Entrando…" : "Acessar a grade"}
       </button>
     </form>
@@ -117,4 +105,4 @@ export function CheckinForm({
 }
 
 const inputCls =
-  "rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100";
+  "rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2 text-white outline-none transition-colors placeholder:text-gray-500 focus:border-[#d4af37]/50 focus:bg-white/[0.06]";

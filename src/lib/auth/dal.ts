@@ -13,7 +13,11 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { readSession } from "./session";
 
-export const ROLES = { ADMIN: "ADMIN", OPERACIONAL: "OPERACIONAL" } as const;
+export const ROLES = {
+  ADMIN: "ADMIN",
+  OPERACIONAL: "OPERACIONAL",
+  MARKETING: "MARKETING",
+} as const;
 export type Role = (typeof ROLES)[keyof typeof ROLES];
 
 export interface CurrentUser {
@@ -25,6 +29,11 @@ export interface CurrentUser {
 
 export function isAdmin(user: Pick<CurrentUser, "role"> | null | undefined): boolean {
   return user?.role === ROLES.ADMIN;
+}
+
+/** ADMIN e MARKETING podem editar a seção Marketing (flyers/banners). */
+export function canManageMarketing(user: Pick<CurrentUser, "role"> | null | undefined): boolean {
+  return user?.role === ROLES.ADMIN || user?.role === ROLES.MARKETING;
 }
 
 /** Usuário atual (ou null). Reconfere no banco se está ativo. Não redireciona. */
@@ -52,5 +61,16 @@ export async function requireUser(): Promise<CurrentUser> {
 export async function requireAdmin(): Promise<CurrentUser> {
   const user = await requireUser();
   if (!isAdmin(user)) redirect("/admin?erro=somente-admin");
+  return user;
+}
+
+/**
+ * Exige ADMIN ou MARKETING (edição da seção Marketing). Demais papéis
+ * autenticados são mandados ao painel (têm acesso de leitura ao resto do
+ * admin, mas não a esta página de escrita).
+ */
+export async function requireMarketing(): Promise<CurrentUser> {
+  const user = await requireUser();
+  if (!canManageMarketing(user)) redirect("/admin?erro=somente-marketing");
   return user;
 }

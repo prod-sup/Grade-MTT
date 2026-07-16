@@ -4,19 +4,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const ITEMS = [
-  { href: "/admin", label: "Painel", exact: true },
-  { href: "/admin/grade", label: "Grade de Torneios" },
-  { href: "/admin/series", label: "Upload de Séries" },
-  { href: "/admin/handicaps", label: "Handicaps" },
-  { href: "/admin/users", label: "Check-ins (Portal)" },
+  { href: "/admin", label: "Painel", exact: true, roles: ["ADMIN", "OPERACIONAL", "MARKETING"] },
+  { href: "/admin/grade", label: "Grade de Torneios", roles: ["ADMIN", "OPERACIONAL", "MARKETING"] },
+  { href: "/admin/series", label: "Upload de Séries", roles: ["ADMIN"] },
+  { href: "/admin/handicaps", label: "Handicaps", roles: ["ADMIN", "OPERACIONAL", "MARKETING"] },
+  { href: "/admin/users", label: "Check-ins (Portal)", roles: ["ADMIN", "OPERACIONAL", "MARKETING"] },
+  { href: "/admin/marketing", label: "Marketing", roles: ["ADMIN", "MARKETING"] },
 ] as const;
 
-export function AdminNav() {
+export function AdminNav({ role }: { role: string }) {
   const pathname = usePathname();
+  const items = ITEMS.filter((item) => (item.roles as readonly string[]).includes(role));
 
   return (
     <nav className="flex flex-col gap-1">
-      {ITEMS.map((item) => {
+      {items.map((item) => {
         const active =
           "exact" in item && item.exact
             ? pathname === item.href

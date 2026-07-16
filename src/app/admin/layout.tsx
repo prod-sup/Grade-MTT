@@ -1,6 +1,18 @@
-import { requireUser, isAdmin } from "@/lib/auth/dal";
+import { requireUser } from "@/lib/auth/dal";
 import { logout } from "@/app/(auth)/actions";
 import { AdminNav } from "./_components/admin-nav";
+
+const ROLE_BADGE: Record<string, string> = {
+  ADMIN: "ADMIN",
+  MARKETING: "MARKETING",
+  OPERACIONAL: "OPERACIONAL (somente leitura)",
+};
+
+const ROLE_BADGE_CLS: Record<string, string> = {
+  ADMIN: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+  MARKETING: "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
+  OPERACIONAL: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+};
 
 export default async function AdminLayout({
   children,
@@ -10,7 +22,6 @@ export default async function AdminLayout({
   // Gate inicial. As páginas e Server Actions re-checam por conta própria
   // (layouts não re-renderizam a cada navegação no Next 16).
   const user = await requireUser();
-  const admin = isAdmin(user);
 
   return (
     <div className="flex min-h-screen bg-zinc-100 dark:bg-black">
@@ -25,7 +36,7 @@ export default async function AdminLayout({
               Backoffice
             </p>
           </div>
-          <AdminNav />
+          <AdminNav role={user.role} />
         </div>
 
         <div className="flex flex-col gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">
@@ -39,12 +50,10 @@ export default async function AdminLayout({
             <span
               className={
                 "mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium " +
-                (admin
-                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
-                  : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300")
+                (ROLE_BADGE_CLS[user.role] ?? ROLE_BADGE_CLS.OPERACIONAL)
               }
             >
-              {admin ? "ADMIN" : "OPERACIONAL (somente leitura)"}
+              {ROLE_BADGE[user.role] ?? user.role}
             </span>
           </div>
 

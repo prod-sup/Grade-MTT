@@ -4,8 +4,18 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import type { TournamentModel } from "@/generated/prisma/models";
 import { computeField, WEEKDAYS, ptWeekday } from "@/lib/conversion";
-import { copyDay, copyWeek, updateTournament } from "./actions";
-import { TOURNAMENT_FIELDS, HOT_FIELDS, type FieldMeta } from "./fields";
+import {
+  copyDay,
+  copyWeek,
+  createTournament,
+  deleteTournament,
+  duplicateTournament,
+  updateTournament,
+} from "./actions";
+import { TOURNAMENT_FIELDS, HOT_FIELDS, selectDisplayValue, type FieldMeta } from "./fields";
+
+// Ordem de exibição por tipo (Main Event → Side Event → Sat), depois horário.
+const TYPE_RANK: Record<string, number> = { "Main Event": 0, "Side Event": 1, "Sat": 2 };
 
 // eventDate (Date) é excluído: não é célula editável desta tabela e não cabe no
 // tipo CellValue (string|number|boolean|null). É tratado nas telas de mês/arquivo.
@@ -62,11 +72,26 @@ export function GradeTable({
     initialDay && WEEKDAYS.some((w) => w.en === initialDay) ? initialDay : firstDay,
   );
   const [detail, setDetail] = useState<TournamentRow | null>(null);
+  const [pendingOpenId, setPendingOpenId] = useState<string | null>(null);
 
-  const rows = useMemo(
-    () => tournaments.filter((t) => t.dayOfWeek === day),
-    [tournaments, day],
-  );
+  const rows = useMemo(() => {
+    const filtered = tournaments.filter((t) => t.dayOfWeek === day);
+    return [...filtered].sort((a, b) => {
+      const ra = TYPE_RANK[a.type] ?? 99;
+      const rb = TYPE_RANK[b.type] ?? 99;
+      if (ra !== rb) return ra - rb;
+      return (a.startTime ?? "").localeCompare(b.startTime ?? "");
+    });
+  }, [tournaments, day]);
+
+  // Reabre o drawer no torneio recém-criado assim que os dados são atualizados
+  // (derivado no render — evita setState dentro de um efeito).
+  const pendingRow = pendingOpenId ? tournaments.find((t) => t.id === pendingOpenId) ?? null : null;
+  const activeDetail = pendingRow ?? detail;
+  function closeDetail() {
+    setDetail(null);
+    setPendingOpenId(null);
+  }
 
   // ISO (YYYY-MM-DD) do dia selecionado e do próximo dia — para copiar/avançar.
   const weekStart = useMemo(() => {
@@ -102,6 +127,20 @@ export function GradeTable({
     });
   }
 
+  function runCreate() {
+    if (!selectedISO) return;
+    setCopyMsg(null);
+    startCopy(async () => {
+      const res = await createTournament(selectedISO);
+      if (res.ok && res.id) {
+        setPendingOpenId(res.id);
+        router.refresh();
+      } else {
+        setCopyMsg({ ok: false, text: res.error ?? "Falha ao criar torneio." });
+      }
+    });
+  }
+
   function runCopyWeek() {
     if (!weekStartISO) return;
     setCopyMsg(null);
@@ -119,7 +158,8 @@ export function GradeTable({
   return (
     <div className="flex flex-col gap-4">
       {/* Filtro por dia da semana */}
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-1">
         {WEEKDAYS.map((w) => {
           const n = counts.get(w.en) ?? 0;
           const active = w.en === day;
@@ -142,6 +182,17 @@ export function GradeTable({
             </button>
           );
         })}
+        </div>
+        {canEdit ? (
+          <button
+            onClick={runCreate}
+            disabled={copying || !selectedISO}
+            className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+            title={`Adicionar novo torneio em ${ptWeekday(day)}`}
+          >
+            + Adicionar torneio
+          </button>
+        ) : null}
       </div>
 
       {/* Construtor de mês: cópia dia a dia / semana anterior (ADMIN, dia vazio) */}
@@ -229,8 +280,8 @@ export function GradeTable({
         </table>
       </div>
 
-      {detail ? (
-        <DetailDrawer row={detail} canEdit={canEdit} onClose={() => setDetail(null)} />
+      {activeDetail ? (
+        <DetailDrawer row={activeDetail} canEdit={canEdit} onClose={closeDetail} />
       ) : null}
     </div>
   );
@@ -291,7 +342,12 @@ function EditableCell({
 
   function commit(next: string | boolean) {
     setError(null);
-    const current = field.kind === "bool" ? Boolean(value) : String(value ?? "");
+    const current =
+      field.kind === "bool"
+        ? Boolean(value)
+        : field.kind === "select"
+          ? selectDisplayValue(field.key, value)
+          : String(value ?? "");
     const nextComparable = field.kind === "bool" ? Boolean(next) : String(next);
     if (current === nextComparable) return;
 
@@ -325,12 +381,13 @@ function EditableCell({
   if (field.kind === "select") {
     return (
       <select
-        defaultValue={String(value ?? "")}
+        defaultValue={selectDisplayValue(field.key, value)}
         disabled={!canEdit || pending}
         onChange={(e) => commit(e.target.value)}
         className={base + " min-w-[7rem]"}
         title={error ?? undefined}
       >
+        <option value="">—</option>
         {field.options?.map((opt) => (
           <option key={opt} value={opt}>
             {field.key === "dayOfWeek" ? ptWeekday(opt) : opt}
@@ -341,7 +398,7 @@ function EditableCell({
   }
 
   const isNumeric = field.kind === "number" || field.kind === "int";
-  const widthCls = field.key === "name" ? "min-w-[16rem]" : isNumeric ? "w-24" : "min-w-[8rem]";
+  const widthCls = field.key === "shortName" ? "min-w-[16rem]" : isNumeric ? "w-24" : "min-w-[8rem]";
 
   return (
     <input
@@ -365,8 +422,37 @@ function DetailDrawer({
   canEdit: boolean;
   onClose: () => void;
 }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  function handleDuplicate() {
+    if (!canEdit) return;
+    setError(null);
+    startTransition(async () => {
+      const res = await duplicateTournament(row.id);
+      if (!res.ok) setError(res.error ?? "Falha ao duplicar.");
+      else {
+        onClose();
+        router.refresh();
+      }
+    });
+  }
+
+  function handleDelete() {
+    if (!canEdit) return;
+    const label = row.shortName ?? row.name;
+    if (!window.confirm(`Excluir "${label}"? Esta ação não pode ser desfeita.`)) return;
+    setError(null);
+    startTransition(async () => {
+      const res = await deleteTournament(row.id);
+      if (!res.ok) setError(res.error ?? "Falha ao excluir.");
+      else {
+        onClose();
+        router.refresh();
+      }
+    });
+  }
 
   const sections = useMemo(() => {
     const map = new Map<string, FieldMeta[]>();
@@ -402,7 +488,7 @@ function DetailDrawer({
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-            {row.name}
+            {row.shortName ?? row.name}
           </h2>
           <button
             onClick={onClose}
@@ -456,6 +542,22 @@ function DetailDrawer({
               >
                 Cancelar
               </button>
+              <button
+                type="button"
+                onClick={handleDuplicate}
+                disabled={pending}
+                className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:hover:bg-zinc-800"
+              >
+                Duplicar torneio
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={pending}
+                className="ml-auto rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/40"
+              >
+                Excluir torneio
+              </button>
             </div>
           ) : null}
         </form>
@@ -481,7 +583,8 @@ function DrawerField({ field, value }: { field: FieldMeta; value: CellValue }) {
     <label className="flex flex-col gap-1 text-sm">
       <span className="font-medium text-zinc-600 dark:text-zinc-400">{field.label}</span>
       {field.kind === "select" ? (
-        <select name={field.key} defaultValue={String(value ?? "")} className={cls}>
+        <select name={field.key} defaultValue={selectDisplayValue(field.key, value)} className={cls}>
+          <option value="">—</option>
           {field.options?.map((opt) => (
             <option key={opt} value={opt}>
               {field.key === "dayOfWeek" ? ptWeekday(opt) : opt}

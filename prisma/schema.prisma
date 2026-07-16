@@ -16,10 +16,13 @@ datasource db {
 // RBAC — Usuários do backoffice
 // ---------------------------------------------------------------------------
 // SQLite não suporta enums nativos no Prisma, portanto os papéis são
-// armazenados como String. Valores válidos: "ADMIN" | "OPERACIONAL".
-//  - ADMIN:       edição total da grade, sistema e handicaps.
+// armazenados como String. Valores válidos: "ADMIN" | "OPERACIONAL" | "MARKETING".
+//  - ADMIN:       edição total da grade, sistema, handicaps e marketing.
 //  - OPERACIONAL: visão idêntica ao Admin (inclui colunas financeiras/rake),
 //                 porém com a interface bloqueada para edição (read-only).
+//  - MARKETING:   mesma visão de leitura do Operacional na grade/handicaps/
+//                 check-ins, mas com edição liberada apenas na seção
+//                 Marketing (flyers/banners — model MarketingBanner).
 // O "Usuário Front-end" (público/parceiros) NÃO é armazenado aqui — ele acessa
 // o portal externo sem autenticação e sem visão das colunas financeiras.
 model User {
@@ -27,7 +30,7 @@ model User {
   email        String   @unique
   name         String
   passwordHash String? // preenchido na fase de autenticação
-  role         String   @default("OPERACIONAL") // "ADMIN" | "OPERACIONAL"
+  role         String   @default("OPERACIONAL") // "ADMIN" | "OPERACIONAL" | "MARKETING"
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -235,14 +238,18 @@ model SeriesImportRow {
 //   type válido: "SINGLE" | "DOUBLE" | "TRIPLE" | "LIST"
 //   (layouts: 1 torneio, 2, 3 empilhados e lista/cronograma até 12 linhas)
 model MarketingBanner {
-  id        String   @id @default(cuid())
-  title     String
-  imageUrl  String // caminho/URL da imagem gerada (web-to-image)
-  type      String // "SINGLE" | "DOUBLE" | "TRIPLE" | "LIST"
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  title      String
+  imageUrl   String // caminho/URL da imagem gerada (web-to-image)
+  type       String // "SINGLE" | "DOUBLE" | "TRIPLE" | "LIST"
+  // Preenchido quando o flyer pertence à aba "Séries" do painel de Marketing
+  // (ex.: "SPS") — null = flyer da grade normal.
+  seriesName String?
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([type])
   @@index([active])
+  @@index([seriesName])
 }

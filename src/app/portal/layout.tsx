@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireVisitor } from "@/lib/portal/dal";
 import { buildContextOptions, fusoValue } from "@/lib/portal/context-options";
+import { GOLD_GRADIENT_TEXT } from "@/lib/ui/premium";
 import { ContextSelector } from "./context-selector";
 import { exitPortal } from "./actions";
 
@@ -19,16 +20,15 @@ export default async function PortalLayout({
   const currentFuso = fusoValue(visitor.utcOffset, visitor.timezoneLabel);
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black">
-      <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/90 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
+    <div className="premium-atmosphere min-h-screen bg-[#0b0c0e] text-white">
+      <header className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#0b0c0e]/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div>
-            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-              Grade MTT — Suprema
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gray-500">
+              Suprema Poker
             </p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Olá, {visitor.name}
-            </p>
+            <p className={`text-sm font-bold ${GOLD_GRADIENT_TEXT}`}>Grade MTT</p>
+            <p className="text-xs text-gray-500">Olá, {visitor.name}</p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -41,7 +41,7 @@ export default async function PortalLayout({
             <form action={exitPortal}>
               <button
                 type="submit"
-                className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                className="rounded-xl border border-white/[0.1] px-3 py-1.5 text-sm font-medium text-gray-400 transition-colors hover:border-white/[0.2] hover:text-white"
               >
                 Sair
               </button>

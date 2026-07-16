@@ -40,7 +40,17 @@
       "Bash(git reset *)",
       "Bash(echo \"dev PID: $!\")",
       "Bash(taskkill //PID 20136 //F)",
-      "Bash(taskkill //PID 2577 //F)"
+      "Bash(taskkill //PID 2577 //F)",
+      "Bash(xargs -I{} sh -c 'echo ==={}===; cat \"{}\"')",
+      "Bash(npm install *)",
+      "Skill(run)",
+      "Bash(npm init *)",
+      "Bash(pkill -f \"npm run dev\")",
+      "Bash(git mv *)",
+      "Bash(tasklist)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill //F //PID 22424)",
+      "Bash(taskkill *)"
     ]
   }
 }

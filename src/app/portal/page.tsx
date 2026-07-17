@@ -2,7 +2,13 @@ import Link from "next/link";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireVisitor } from "@/lib/portal/dal";
-import { convertTournament, formatMoney, ptWeekday, WEEKDAYS } from "@/lib/conversion";
+import {
+  convertTournament,
+  formatMoney,
+  isTournamentStillUpcoming,
+  ptWeekday,
+  WEEKDAYS,
+} from "@/lib/conversion";
 import {
   formatBlinds,
   formatCompactNumber,
@@ -11,6 +17,11 @@ import {
   formatStack,
 } from "@/lib/flyer/format";
 import { DayGrade, type PortalDay, type PortalRow } from "./_components/day-grade";
+import type { FeaturedCard } from "./_components/featured-carousel";
+
+// Janela de busca dos "Torneios em Destaque" (carrossel) — mesmo horizonte
+// usado nos flyers (14 dias), independente da semana que o visitante navega.
+const FEATURED_HORIZON_DAYS = 14;
 
 // --- Definição das 5 abas (seção 6) ---
 type TabKey = "grade" | "satellites" | "featured" | "series" | "live";
@@ -215,6 +226,39 @@ export default async function PortalPage({
     new Date(weekEnd.getTime() - DAY_MS),
   )}`;
 
+  // --- Torneios em Destaque (carrossel da Grade principal) -------------------
+  // Independente da semana navegada: horizonte rolante a partir de hoje.
+  // Um card some da rotação assim que o torneio começa (ou o dia encerra),
+  // sempre reavaliado contra `now` a cada carregamento da página.
+  let featured: FeaturedCard[] = [];
+  if (tab.key === "grade") {
+    const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const featuredHorizon = new Date(todayUTC.getTime() + FEATURED_HORIZON_DAYS * DAY_MS);
+    const featuredRaw = await prisma.tournament.findMany({
+      where: {
+        visible: true,
+        archived: false,
+        eventDate: { gte: todayUTC, lte: featuredHorizon },
+        OR: [{ featured: true }, { type: "Main Event" }],
+      },
+      orderBy: [{ eventDate: "asc" }, { startTime: "asc" }],
+    });
+    featured = featuredRaw
+      .filter((t) => t.eventDate && isTournamentStillUpcoming(t.eventDate, t.startTime, now))
+      .map((t) => {
+        const view = convertTournament(t, ctx, { includeAdminFee: true });
+        return {
+          id: t.id,
+          shortName: t.shortName ?? t.name,
+          gtd: formatMoney(view.gtd, ctx.currencyLabel),
+          startTime: view.startTime,
+          startDayOffset: view.startDayOffset,
+          dateLabel: formatDateUTC(t.eventDate!).slice(0, 5),
+          isMain: t.type === "Main Event",
+        };
+      });
+  }
+
   return (
     <div className="flex flex-col gap-5">
       {/* Abas */}
@@ -261,6 +305,7 @@ export default async function PortalPage({
       <DayGrade
         days={days}
         defaultDayEn={defaultDayEn}
+        featured={featured}
         weekNav={{
           prevHref: `/portal?tab=${tab.key}&week=${isoDayUTC(prevWeek)}`,
           nextHref: `/portal?tab=${tab.key}&week=${isoDayUTC(nextWeek)}`,

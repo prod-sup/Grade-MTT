@@ -7,7 +7,20 @@ import type { FlyerLayout, FlyerTournament } from "@/lib/flyer/types";
 import { downloadDataUrl } from "@/lib/flyer/download";
 import { FlyerModal } from "@/components/flyer/modal";
 import { useFlyerStage } from "@/components/flyer/stage";
-import { GHOST_BUTTON, GLASS_CARD, GLASS_CARD_HOVER, GOLD_GRADIENT_BG } from "@/lib/ui/premium";
+import {
+  GHOST_BUTTON,
+  GLASS_CARD,
+  GLASS_CARD_HOVER,
+  GOLD_GRADIENT_BG,
+  TEXT_PRIMARY,
+  TEXT_BODY,
+  TEXT_SECONDARY,
+  TEXT_MUTED,
+  BORDER_SUBTLE,
+  BORDER_HAIRLINE,
+  ROW_HOVER,
+} from "@/lib/ui/premium";
+import { FeaturedCarousel, type FeaturedCard } from "./featured-carousel";
 
 /** Linha da grade já pronta para exibição (tabela) e para injeção no flyer. */
 export interface PortalRow {
@@ -50,10 +63,12 @@ export function DayGrade({
   days,
   defaultDayEn,
   weekNav,
+  featured = [],
 }: {
   days: PortalDay[];
   defaultDayEn: string;
   weekNav: WeekNav;
+  featured?: FeaturedCard[];
 }) {
   const [dayEn, setDayEn] = useState(defaultDayEn);
   const onCaptured = useCallback(
@@ -74,7 +89,7 @@ export function DayGrade({
       {/* Navegação por semana + Gerar Flyer (geral) */}
       <div className="flex items-center justify-between gap-2">
         <WeekNavButton href={weekNav.prevHref} enabled={weekNav.hasPrev} label="‹ Semana anterior" />
-        <span className="text-sm font-semibold text-white">{weekNav.label}</span>
+        <span className={`text-sm font-semibold ${TEXT_PRIMARY}`}>{weekNav.label}</span>
         <div className="flex items-center gap-2">
           <WeekNavButton href={weekNav.nextHref} enabled={weekNav.hasNext} label="Próxima semana ›" />
           <FlyerModal available={rows.map((r) => r.flyer)} busy={busy} onGenerate={handleGenerate} />
@@ -95,7 +110,7 @@ export function DayGrade({
                 "rounded-xl px-3 py-1.5 text-sm font-medium transition-all duration-200 " +
                 (active
                   ? `${GOLD_GRADIENT_BG} text-black font-semibold shadow-[0_0_15px_rgba(212,175,55,0.18)]`
-                  : "border border-white/[0.08] bg-white/[0.03] text-gray-400 hover:border-white/[0.16] hover:bg-white/[0.05] hover:text-gray-200")
+                  : `border ${BORDER_SUBTLE} bg-gray-50 dark:bg-white/[0.03] ${TEXT_SECONDARY} hover:border-gray-300 dark:hover:border-white/[0.16] hover:bg-gray-100 dark:hover:bg-white/[0.05] hover:text-gray-700 dark:hover:text-gray-200`)
               }
             >
               {w.ptShort}
@@ -106,15 +121,19 @@ export function DayGrade({
         })}
       </div>
 
+      <FeaturedCarousel items={featured} />
+
       {current ? (
         <section>
-          <h2 className="mb-3 text-lg font-semibold text-white">
+          <h2 className={`mb-3 text-lg font-semibold ${TEXT_PRIMARY}`}>
             {current.weekdayLabel}{" "}
-            <span className="text-sm font-normal text-gray-500">{current.dateLabel}</span>
+            <span className={`text-sm font-normal ${TEXT_MUTED}`}>{current.dateLabel}</span>
           </h2>
 
           {rows.length === 0 ? (
-            <p className={`rounded-2xl border border-dashed border-white/[0.12] px-4 py-10 text-center text-sm text-gray-500`}>
+            <p
+              className={`rounded-2xl border border-dashed border-gray-200 dark:border-white/[0.12] px-4 py-10 text-center text-sm ${TEXT_MUTED}`}
+            >
               Nenhum torneio disponível neste dia.
             </p>
           ) : (
@@ -123,7 +142,7 @@ export function DayGrade({
               <div className={`hidden overflow-x-auto md:block ${GLASS_CARD}`}>
                 <table className="w-full border-collapse text-sm">
                   <thead className="text-left">
-                    <tr className="border-b border-white/[0.08]">
+                    <tr className={`border-b ${BORDER_SUBTLE}`}>
                       <Th>Horário</Th>
                       <Th>Torneio</Th>
                       <Th>GTD</Th>
@@ -144,11 +163,11 @@ export function DayGrade({
                       return (
                         <tr
                           key={r.id}
-                          className="border-t border-white/[0.06] transition-colors hover:bg-white/[0.02]"
+                          className={`border-t ${BORDER_HAIRLINE} transition-colors ${ROW_HOVER}`}
                         >
                           <Td
                             className={
-                              "whitespace-nowrap font-medium text-gray-200" +
+                              `whitespace-nowrap font-medium ${TEXT_BODY}` +
                               (kind === "main" ? " border-l-2 border-[#d4af37]/50" : "")
                             }
                           >
@@ -160,19 +179,19 @@ export function DayGrade({
                             ) : null}
                           </Td>
                           <Td>
-                            <span className="flex items-center gap-2 text-gray-200">
+                            <span className={`flex items-center gap-2 ${TEXT_BODY}`}>
                               {kind === "main" ? <span title="Main Event">👑</span> : null}
                               {r.shortName}
                               <TypeTag type={r.type} kind={kind} />
                             </span>
                           </Td>
                           <Td className="font-semibold text-[#d4af37]">{r.gtd}</Td>
-                          <Td className="text-gray-300">{r.buyIn}</Td>
-                          <Td className="text-gray-400">{r.reentry}</Td>
-                          <Td className="text-gray-400">{r.addon}</Td>
-                          <Td className="whitespace-nowrap text-gray-400">{r.blinds}</Td>
-                          <Td className="whitespace-nowrap text-gray-400">{r.stack}</Td>
-                          <Td className="whitespace-nowrap text-gray-400">{r.lateReg}</Td>
+                          <Td className={TEXT_BODY}>{r.buyIn}</Td>
+                          <Td className={TEXT_SECONDARY}>{r.reentry}</Td>
+                          <Td className={TEXT_SECONDARY}>{r.addon}</Td>
+                          <Td className={`whitespace-nowrap ${TEXT_SECONDARY}`}>{r.blinds}</Td>
+                          <Td className={`whitespace-nowrap ${TEXT_SECONDARY}`}>{r.stack}</Td>
+                          <Td className={`whitespace-nowrap ${TEXT_SECONDARY}`}>{r.lateReg}</Td>
                           <Td className="text-right">
                             <button
                               type="button"
@@ -204,11 +223,11 @@ export function DayGrade({
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-white">
+                          <p className={`flex items-center gap-1.5 truncate text-sm font-semibold ${TEXT_PRIMARY}`}>
                             {kind === "main" ? <span title="Main Event">👑</span> : null}
                             {r.shortName}
                           </p>
-                          <p className="mt-1 text-xs text-gray-500">
+                          <p className={`mt-1 text-xs ${TEXT_MUTED}`}>
                             {r.startTime}
                             {r.startDayOffset !== 0 ? (
                               <span className="ml-1 text-[#d4af37]">
@@ -223,12 +242,14 @@ export function DayGrade({
                         <p className="shrink-0 text-2xl font-bold text-[#d4af37]">{r.gtd}</p>
                       </div>
 
-                      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.06] pt-2 text-xs text-gray-400">
+                      <div
+                        className={`flex flex-wrap items-center justify-between gap-2 border-t ${BORDER_HAIRLINE} pt-2 text-xs ${TEXT_SECONDARY}`}
+                      >
                         <span className="flex items-center gap-2">
                           <span>{r.buyIn} buy-in</span>
-                          <span className="text-gray-600">•</span>
+                          <span className={TEXT_MUTED}>•</span>
                           <span>{r.stack} stack</span>
-                          <span className="text-gray-600">•</span>
+                          <span className={TEXT_MUTED}>•</span>
                           <span>{r.lateReg}</span>
                         </span>
                         <button
@@ -269,7 +290,7 @@ function TypeTag({ type, kind }: { type: string; kind: "main" | "sat" | "side" }
       ? "border-[#d4af37]/40 bg-[#d4af37]/10 text-[#f3e5ab]"
       : kind === "sat"
         ? "border-cyan-400/30 bg-cyan-400/10 text-cyan-300"
-        : "border-white/[0.12] bg-white/[0.05] text-gray-400";
+        : `border-gray-200 dark:border-white/[0.12] bg-gray-100 dark:bg-white/[0.05] ${TEXT_SECONDARY}`;
   return (
     <span
       className={`shrink-0 whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${cls}`}
@@ -291,7 +312,7 @@ function WeekNavButton({
   const cls = "rounded-xl px-3 py-1.5 text-sm font-medium transition-all duration-200";
   if (!enabled) {
     return (
-      <span className={`${cls} cursor-not-allowed border border-white/[0.06] text-gray-600`}>
+      <span className={`${cls} cursor-not-allowed border border-gray-200 dark:border-white/[0.06] ${TEXT_MUTED}`}>
         {label}
       </span>
     );
@@ -305,7 +326,7 @@ function WeekNavButton({
 
 function Th({ children }: { children?: React.ReactNode }) {
   return (
-    <th className="whitespace-nowrap px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
+    <th className={`whitespace-nowrap px-3 py-2.5 text-xs font-semibold uppercase tracking-wide ${TEXT_MUTED}`}>
       {children}
     </th>
   );

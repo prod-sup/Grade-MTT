@@ -22,7 +22,7 @@ export interface TimeConversionResult {
 }
 
 /** Faz o parse de "HH:mm" em minutos desde a meia-noite. Retorna null se inválido. */
-function parseHHMM(value: string): number | null {
+export function parseHHMM(value: string): number | null {
   const m = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
   if (!m) return null;
   const hh = Number(m[1]);
@@ -131,6 +131,52 @@ export function formatFullDate(date: Date): string {
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const yyyy = date.getFullYear();
   return `${weekday} - ${dd}/${mm}/${yyyy}`;
+}
+
+/**
+ * Instante real (UTC) de início de um torneio: combina a data-label do evento
+ * (`eventDate`, cujos componentes Y-M-D em UTC representam o dia-base GMT-3)
+ * com o horário base "HH:mm" (também GMT-3). GMT-3 = UTC-3, então HH:mm em
+ * GMT-3 equivale a HH+3:mm em UTC no mesmo dia-base (Date.UTC normaliza
+ * automaticamente o rollover de dia/mês/ano quando HH+3 passa de 23).
+ * Retorna null se `baseStartTime` não for um "HH:mm" válido.
+ */
+export function tournamentStartInstant(eventDate: Date, baseStartTime: string): Date | null {
+  const minutes = parseHHMM(baseStartTime);
+  if (minutes === null) return null;
+  const hh = Math.floor(minutes / 60) + Math.abs(BASE_UTC_OFFSET);
+  const mm = minutes % 60;
+  return new Date(
+    Date.UTC(eventDate.getUTCFullYear(), eventDate.getUTCMonth(), eventDate.getUTCDate(), hh, mm),
+  );
+}
+
+/** Fim do dia-base GMT-3 do evento (24:00 GMT-3 = 03:00 UTC do dia seguinte). */
+export function tournamentDayEndInstant(eventDate: Date): Date {
+  return new Date(
+    Date.UTC(
+      eventDate.getUTCFullYear(),
+      eventDate.getUTCMonth(),
+      eventDate.getUTCDate() + 1,
+      Math.abs(BASE_UTC_OFFSET),
+      0,
+    ),
+  );
+}
+
+/**
+ * Um torneio ainda está "ativo" pra fins de destaque/rotação se o horário de
+ * início ainda não chegou; se o horário base for inválido, usa o fim do dia
+ * do evento como fallback (nunca mostra um torneio de um dia já encerrado).
+ */
+export function isTournamentStillUpcoming(
+  eventDate: Date,
+  baseStartTime: string,
+  now: Date = new Date(),
+): boolean {
+  const start = tournamentStartInstant(eventDate, baseStartTime);
+  const cutoff = start ?? tournamentDayEndInstant(eventDate);
+  return now.getTime() < cutoff.getTime();
 }
 
 /**

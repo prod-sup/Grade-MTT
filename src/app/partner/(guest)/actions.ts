@@ -14,9 +14,16 @@ import {
   PARTNER_SESSION_TTL_MS,
 } from "@/lib/partner/session";
 import { sendMail, buildAppUrl } from "@/lib/mail/mailer";
+import { checkRateLimit, getClientIp } from "@/lib/security/rate-limit";
 
 const MIN_PASSWORD_LENGTH = 8;
 const RESET_TTL_MS = 1000 * 60 * 60; // 1 hora
+const LOGIN_LIMIT = 5;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const RESET_REQUEST_LIMIT = 3;
+const RESET_REQUEST_WINDOW_MS = 15 * 60 * 1000;
+const RESET_ATTEMPT_LIMIT = 10;
+const RESET_ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
 
 export interface FormState {
   error?: string;
@@ -87,6 +94,12 @@ export async function partnerLogin(
     return { error: "Informe e-mail e senha." };
   }
 
+  const ip = await getClientIp();
+  const rate = checkRateLimit(`partner-login:${ip}:${email}`, LOGIN_LIMIT, LOGIN_WINDOW_MS);
+  if (!rate.allowed) {
+    return { error: "Muitas tentativas. Tente novamente em alguns minutos." };
+  }
+
   const partner = await prisma.partnerAccount.findUnique({ where: { email } });
   const ok =
     partner?.active && partner.passwordHash && verifyPassword(password, partner.passwordHash);
@@ -116,6 +129,18 @@ export async function requestPasswordReset(
 ): Promise<FormState> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   if (!email) return { error: "Informe seu e-mail." };
+
+  const ip = await getClientIp();
+  const rate = checkRateLimit(
+    `partner-reset-request:${ip}:${email}`,
+    RESET_REQUEST_LIMIT,
+    RESET_REQUEST_WINDOW_MS,
+  );
+  if (!rate.allowed) {
+    // Mesma mensagem genérica de sucesso — não revela rate limit nem
+    // enumeração de e-mail a quem está tentando abusar do formulário.
+    return { message: "Se esse e-mail estiver cadastrado, enviamos um link de redefinição." };
+  }
 
   const partner = await prisma.partnerAccount.findUnique({ where: { email } });
   if (partner?.active) {
@@ -148,6 +173,12 @@ export async function resetPassword(
     return { error: `A senha deve ter ao menos ${MIN_PASSWORD_LENGTH} caracteres.` };
   }
   if (password !== confirmPassword) return { error: "As senhas não coincidem." };
+
+  const ip = await getClientIp();
+  const rate = checkRateLimit(`partner-reset-attempt:${ip}:${token}`, RESET_ATTEMPT_LIMIT, RESET_ATTEMPT_WINDOW_MS);
+  if (!rate.allowed) {
+    return { error: "Muitas tentativas. Tente novamente em alguns minutos." };
+  }
 
   const ok = await prisma.$transaction(async (tx) => {
     const reset = await tx.partnerPasswordReset.findUnique({ where: { token } });

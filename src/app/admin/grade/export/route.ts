@@ -50,54 +50,59 @@ export async function GET(request: Request) {
     return new Response("Não autorizado.", { status: 401 });
   }
 
-  const { searchParams } = new URL(request.url);
-  const now = new Date();
-  const from = parseISO(searchParams.get("from")) ?? startOfWeekUTC(now);
-  const toParam = parseISO(searchParams.get("to"));
-  const to = toParam ?? new Date(from.getTime() + 6 * DAY_MS); // padrão: semana
-  const format = searchParams.get("format") === "vertical" ? "vertical" : "horizontal";
+  try {
+    const { searchParams } = new URL(request.url);
+    const now = new Date();
+    const from = parseISO(searchParams.get("from")) ?? startOfWeekUTC(now);
+    const toParam = parseISO(searchParams.get("to"));
+    const to = toParam ?? new Date(from.getTime() + 6 * DAY_MS); // padrão: semana
+    const format = searchParams.get("format") === "vertical" ? "vertical" : "horizontal";
 
-  const rangeEnd = new Date(to.getTime() + DAY_MS); // exclusivo (inclui o dia "to")
+    const rangeEnd = new Date(to.getTime() + DAY_MS); // exclusivo (inclui o dia "to")
 
-  const rows = await prisma.tournament.findMany({
-    where: { eventDate: { gte: from, lt: rangeEnd } },
-    orderBy: [{ eventDate: "asc" }, { startTime: "asc" }],
-  });
+    const rows = await prisma.tournament.findMany({
+      where: { eventDate: { gte: from, lt: rangeEnd } },
+      orderBy: [{ eventDate: "asc" }, { startTime: "asc" }],
+    });
 
-  // Definição de colunas: Data + todos os campos do torneio.
-  const columns: { header: string; get: (t: (typeof rows)[number]) => CellOut }[] = [
-    { header: "Data", get: (t) => (t.eventDate ? isoDay(t.eventDate) : "") },
-    ...TOURNAMENT_FIELDS.map((f) => ({
-      header: f.label,
-      get: (t: (typeof rows)[number]) =>
-        fmt((t as Record<string, unknown>)[f.key], f.kind),
-    })),
-  ];
+    // Definição de colunas: Data + todos os campos do torneio.
+    const columns: { header: string; get: (t: (typeof rows)[number]) => CellOut }[] = [
+      { header: "Data", get: (t) => (t.eventDate ? isoDay(t.eventDate) : "") },
+      ...TOURNAMENT_FIELDS.map((f) => ({
+        header: f.label,
+        get: (t: (typeof rows)[number]) =>
+          fmt((t as Record<string, unknown>)[f.key], f.kind),
+      })),
+    ];
 
-  let aoa: CellOut[][];
-  if (format === "vertical") {
-    // Transposto: cada LINHA é um campo; colunas = torneios.
-    aoa = columns.map((c) => [c.header, ...rows.map((t) => c.get(t))]);
-  } else {
-    // Horizontal (base): cabeçalho + uma linha por torneio.
-    aoa = [columns.map((c) => c.header), ...rows.map((t) => columns.map((c) => c.get(t)))];
+    let aoa: CellOut[][];
+    if (format === "vertical") {
+      // Transposto: cada LINHA é um campo; colunas = torneios.
+      aoa = columns.map((c) => [c.header, ...rows.map((t) => c.get(t))]);
+    } else {
+      // Horizontal (base): cabeçalho + uma linha por torneio.
+      aoa = [columns.map((c) => c.header), ...rows.map((t) => columns.map((c) => c.get(t)))];
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Grade");
+    const buffer: Buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+
+    const suffix = format === "vertical" ? "_vertical" : "";
+    const filename = `grade_${isoDay(from)}_a_${isoDay(to)}${suffix}.xlsx`;
+
+    return new Response(new Uint8Array(buffer), {
+      status: 200,
+      headers: {
+        "Content-Type":
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  } catch (err) {
+    console.error("[admin/grade/export] Falha ao gerar export:", err);
+    return new Response("Não foi possível gerar o export.", { status: 500 });
   }
-
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Grade");
-  const buffer: Buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
-
-  const suffix = format === "vertical" ? "_vertical" : "";
-  const filename = `grade_${isoDay(from)}_a_${isoDay(to)}${suffix}.xlsx`;
-
-  return new Response(new Uint8Array(buffer), {
-    status: 200,
-    headers: {
-      "Content-Type":
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="${filename}"`,
-      "Cache-Control": "no-store",
-    },
-  });
 }

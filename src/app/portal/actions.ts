@@ -12,10 +12,15 @@ import {
   getVisitor,
   VISITOR_TTL_MS,
 } from "@/lib/portal/session";
+import { checkRateLimit, getClientIp } from "@/lib/security/rate-limit";
 
 export interface CheckinState {
   error?: string;
 }
+
+// Formulário público sem autenticação — limite generoso só pra conter spam.
+const CHECKIN_LIMIT = 10;
+const CHECKIN_WINDOW_MS = 10 * 60 * 1000;
 
 /** Decodifica o valor do dropdown de fuso: "<offset>|<label>". */
 function parseFuso(
@@ -45,6 +50,12 @@ export async function checkin(
 
   if (!name || !email) return { error: "Informe nome e e-mail." };
   if (!handicapId) return { error: "Selecione um país/handicap." };
+
+  const ip = await getClientIp();
+  const rate = checkRateLimit(`checkin:${ip}`, CHECKIN_LIMIT, CHECKIN_WINDOW_MS);
+  if (!rate.allowed) {
+    return { error: "Muitas tentativas. Tente novamente em alguns minutos." };
+  }
 
   const handicap = await prisma.handicap.findUnique({ where: { id: handicapId } });
   if (!handicap || !handicap.active) {

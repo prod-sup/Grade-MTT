@@ -7,10 +7,14 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/auth/password";
 import { setSessionCookie, clearSessionCookie, SESSION_TTL_MS } from "@/lib/auth/session";
+import { checkRateLimit, getClientIp } from "@/lib/security/rate-limit";
 
 export interface LoginState {
   error?: string;
 }
+
+const LOGIN_LIMIT = 5;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 
 export async function login(
   _prevState: LoginState,
@@ -21,6 +25,12 @@ export async function login(
 
   if (!email || !password) {
     return { error: "Informe e-mail e senha." };
+  }
+
+  const ip = await getClientIp();
+  const rate = checkRateLimit(`login:${ip}:${email}`, LOGIN_LIMIT, LOGIN_WINDOW_MS);
+  if (!rate.allowed) {
+    return { error: "Muitas tentativas. Tente novamente em alguns minutos." };
   }
 
   const user = await prisma.user.findUnique({ where: { email } });

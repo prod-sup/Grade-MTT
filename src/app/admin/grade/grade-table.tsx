@@ -12,6 +12,7 @@ import {
   duplicateTournament,
   updateTournament,
 } from "./actions";
+import { DeleteDayModal } from "./delete-day-modal";
 import { TOURNAMENT_FIELDS, HOT_FIELDS, selectDisplayValue, type FieldMeta } from "./fields";
 import {
   TEXT_PRIMARY,
@@ -83,6 +84,7 @@ export function GradeTable({
   );
   const [detail, setDetail] = useState<TournamentRow | null>(null);
   const [pendingOpenId, setPendingOpenId] = useState<string | null>(null);
+  const [deletingDay, setDeletingDay] = useState(false);
 
   const rows = useMemo(() => {
     const filtered = tournaments.filter((t) => t.dayOfWeek === day);
@@ -194,14 +196,26 @@ export function GradeTable({
         })}
         </div>
         {canEdit ? (
-          <button
-            onClick={runCreate}
-            disabled={copying || !selectedISO}
-            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
-            title={`Adicionar novo torneio em ${ptWeekday(day)}`}
-          >
-            + Adicionar torneio
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={runCreate}
+              disabled={copying || !selectedISO}
+              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+              title={`Adicionar novo torneio em ${ptWeekday(day)}`}
+            >
+              + Adicionar torneio
+            </button>
+            {!dayEmpty ? (
+              <button
+                onClick={() => setDeletingDay(true)}
+                disabled={copying || !selectedISO}
+                className="rounded-lg border border-red-500/30 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400"
+                title={`Excluir todos os torneios de ${ptWeekday(day)}`}
+              >
+                Excluir Dia
+              </button>
+            ) : null}
+          </div>
         ) : null}
       </div>
 
@@ -290,6 +304,19 @@ export function GradeTable({
 
       {activeDetail ? (
         <DetailDrawer row={activeDetail} canEdit={canEdit} onClose={closeDetail} />
+      ) : null}
+
+      {deletingDay && selectedISO ? (
+        <DeleteDayModal
+          dateISO={selectedISO}
+          weekdayLabel={ptWeekday(day)}
+          dateLabel={dateByWeekday.get(day) ?? fmtISO(selectedISO)}
+          onClose={() => setDeletingDay(false)}
+          onDeleted={() => {
+            setDeletingDay(false);
+            router.refresh();
+          }}
+        />
       ) : null}
     </div>
   );

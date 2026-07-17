@@ -10,6 +10,8 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isAdmin } from "@/lib/auth/dal";
 import { WEEKDAYS } from "@/lib/conversion";
 import { EDITABLE_KEYS, FIELD_KINDS, TOURNAMENT_FIELDS, VALUE_TYPES } from "./fields";
+import { checkRateLimit, getClientIp } from "@/lib/security/rate-limit";
+import { safeCompare } from "@/lib/security/compare-secret";
 
 export interface ActionResult {
   ok: boolean;
@@ -360,4 +362,58 @@ export async function deleteTournament(id: string): Promise<ActionResult> {
   }
   revalidatePath("/admin/grade");
   return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// Excluir Dia — ação de alta segurança (confirmação por senha master)
+// ---------------------------------------------------------------------------
+// Apaga TODOS os torneios de uma data concreta (não do dia da semana em
+// outras datas). Exige a senha master (DELETE_GRADE_PASSWORD, .env) além do
+// RBAC de ADMIN já existente — é uma segunda camada deliberada para uma
+// operação destrutiva e irreversível. Falha fechada: sem a env var
+// configurada, a exclusão fica desativada (nunca permite por omissão).
+
+export interface DeleteDayResult extends ActionResult {
+  deleted?: number;
+}
+
+const DELETE_DAY_LIMIT = 5;
+const DELETE_DAY_WINDOW_MS = 15 * 60 * 1000;
+
+export async function deleteDayWithPassword(
+  dateISO: string,
+  password: string,
+): Promise<DeleteDayResult> {
+  const actor = await getCurrentUser();
+  if (!isAdmin(actor)) {
+    return { ok: false, error: "Apenas administradores podem excluir um dia da grade." };
+  }
+
+  const ip = await getClientIp();
+  const rate = checkRateLimit(`delete-day:${actor!.id}:${ip}`, DELETE_DAY_LIMIT, DELETE_DAY_WINDOW_MS);
+  if (!rate.allowed) {
+    return { ok: false, error: "Muitas tentativas. Tente novamente em alguns minutos." };
+  }
+
+  const masterPassword = process.env.DELETE_GRADE_PASSWORD;
+  if (!masterPassword) {
+    return { ok: false, error: "Exclusão de dia desativada: senha master não configurada." };
+  }
+  if (!password || !safeCompare(password, masterPassword)) {
+    return { ok: false, error: "Senha incorreta." };
+  }
+
+  const target = parseISO(dateISO);
+  if (!target) return { ok: false, error: "Data inválida." };
+
+  try {
+    const result = await prisma.tournament.deleteMany({
+      where: { eventDate: { gte: target, lt: new Date(target.getTime() + DAY_MS) } },
+    });
+    revalidatePath("/admin/grade");
+    revalidatePath("/portal");
+    return { ok: true, deleted: result.count };
+  } catch {
+    return { ok: false, error: "Falha ao excluir os torneios do dia." };
+  }
 }

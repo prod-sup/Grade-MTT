@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { submitBrand } from "./actions";
-import { GHOST_BUTTON, GOLD_BUTTON } from "@/lib/ui/premium";
+import { BORDER_SUBTLE, GHOST_BUTTON, GOLD_BUTTON, TEXT_BODY, TEXT_MUTED, TEXT_PRIMARY } from "@/lib/ui/premium";
 
 const MAX_FILE_BYTES = 2 * 1024 * 1024; // 2MB — guarda mínima, sem validação de dimensão.
 
@@ -97,12 +97,12 @@ export function BrandForm({
       </div>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-gray-300">Telefone / ID do clube</span>
+        <span className={`font-medium ${TEXT_BODY}`}>Telefone / ID do clube</span>
         <input
           value={phoneText}
           onChange={(e) => setPhoneText(e.target.value)}
           placeholder="Ex: (11) 99999-9999 · Clube #123"
-          className="rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2 text-white outline-none transition-colors placeholder:text-gray-500 focus:border-[#d4af37]/50 focus:bg-white/[0.06]"
+          className={`rounded-xl border border-gray-300 dark:border-white/[0.1] bg-gray-50 dark:bg-white/[0.04] px-3 py-2 ${TEXT_PRIMARY} outline-none transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-[#d4af37]/50 focus:bg-white dark:focus:bg-white/[0.06]`}
         />
       </label>
 
@@ -140,13 +140,15 @@ function ImageField({
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
   return (
-    <div className={`flex flex-col gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4`}>
-      <span className="text-sm font-medium text-gray-300">{label}</span>
+    <div className={`flex flex-col gap-2 rounded-2xl border ${BORDER_SUBTLE} bg-gray-50 dark:bg-white/[0.02] p-4`}>
+      <span className={`text-sm font-medium ${TEXT_BODY}`}>{label}</span>
       {preview ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={preview} alt={label} className="h-20 w-full rounded-lg object-contain bg-black/30" />
       ) : (
-        <div className="flex h-20 items-center justify-center rounded-lg border border-dashed border-white/[0.1] text-xs text-gray-500">
+        <div
+          className={`flex h-20 items-center justify-center rounded-lg border border-dashed border-gray-300 dark:border-white/[0.1] text-xs ${TEXT_MUTED}`}
+        >
           Nenhuma imagem
         </div>
       )}
@@ -154,7 +156,7 @@ function ImageField({
         Escolher arquivo
         <input type="file" accept="image/png" className="hidden" onChange={onChange} />
       </label>
-      <span className="text-xs text-gray-500">{hint}</span>
+      <span className={`text-xs ${TEXT_MUTED}`}>{hint}</span>
     </div>
   );
 }

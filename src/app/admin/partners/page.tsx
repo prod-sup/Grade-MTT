@@ -1,5 +1,6 @@
 import { requireMarketing } from "@/lib/auth/dal";
 import { prisma } from "@/lib/prisma";
+import { TEXT_MUTED, TEXT_PRIMARY } from "@/lib/ui/premium";
 import { PartnersManager, type InviteRow, type PartnerRow } from "./partners-manager";
 
 export default async function AdminPartnersPage() {
@@ -39,8 +40,8 @@ export default async function AdminPartnersPage() {
 
   return (
     <div className="mx-auto max-w-full">
-      <h1 className="text-2xl font-semibold text-white">Parceiros</h1>
-      <p className="mt-1 text-sm text-gray-500">
+      <h1 className={`text-2xl font-semibold ${TEXT_PRIMARY}`}>Parceiros</h1>
+      <p className={`mt-1 text-sm ${TEXT_MUTED}`}>
         Convide parceiros (Ligas/Clubes/Agentes) e aprove ou recuse a marca (logo, marca
         d&apos;água, telefone) antes que ela apareça nos flyers deles.
       </p>

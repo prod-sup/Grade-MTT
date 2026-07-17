@@ -13,6 +13,16 @@ import {
   updateTournament,
 } from "./actions";
 import { TOURNAMENT_FIELDS, HOT_FIELDS, selectDisplayValue, type FieldMeta } from "./fields";
+import {
+  TEXT_PRIMARY,
+  TEXT_BODY,
+  TEXT_SECONDARY,
+  TEXT_MUTED,
+  SURFACE_ELEVATED_BG,
+  BORDER_SUBTLE,
+  BORDER_HAIRLINE,
+  ROW_HOVER,
+} from "@/lib/ui/premium";
 
 // Ordem de exibição por tipo (Main Event → Side Event → Sat), depois horário.
 const TYPE_RANK: Record<string, number> = { "Main Event": 0, "Side Event": 1, "Sat": 2 };
@@ -170,8 +180,8 @@ export function GradeTable({
               className={
                 "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors " +
                 (active
-                  ? "bg-white/[0.08] text-white"
-                  : "border border-white/[0.08] bg-white/[0.02] text-gray-400 hover:bg-white/[0.05] hover:text-gray-200")
+                  ? `bg-gray-100 dark:bg-white/[0.08] ${TEXT_PRIMARY}`
+                  : `border ${BORDER_SUBTLE} bg-gray-50 dark:bg-white/[0.02] ${TEXT_SECONDARY} hover:bg-gray-100 dark:hover:bg-white/[0.05] hover:text-gray-700 dark:hover:text-gray-200`)
               }
             >
               {w.pt}
@@ -198,7 +208,7 @@ export function GradeTable({
       {/* Construtor de mês: cópia dia a dia / semana anterior (ADMIN, dia vazio) */}
       {canEdit && dayEmpty ? (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-emerald-500/30 bg-emerald-500/[0.06] px-3 py-2">
-          <span className="text-sm text-emerald-300">{ptWeekday(day)} está vazio.</span>
+          <span className="text-sm text-emerald-700 dark:text-emerald-300">{ptWeekday(day)} está vazio.</span>
           <button
             onClick={runCopyDay}
             disabled={copying || !source || !selectedISO}
@@ -214,42 +224,42 @@ export function GradeTable({
           <button
             onClick={runCopyWeek}
             disabled={copying || !weekStartISO}
-            className="rounded-lg border border-emerald-500/40 px-3 py-1.5 text-sm font-medium text-emerald-300 transition-colors hover:bg-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg border border-emerald-500/40 px-3 py-1.5 text-sm font-medium text-emerald-700 dark:text-emerald-300 transition-colors hover:bg-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-60"
             title="Preenche a semana inteira copiando a semana anterior"
           >
             Copiar semana anterior completa
           </button>
           {copyMsg ? (
-            <span className={"text-xs " + (copyMsg.ok ? "text-emerald-400" : "text-red-400")}>
+            <span className={"text-xs " + (copyMsg.ok ? "text-emerald-700 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
               {copyMsg.text}
             </span>
           ) : null}
         </div>
       ) : null}
       {canEdit && !dayEmpty && copyMsg ? (
-        <p className={"text-xs " + (copyMsg.ok ? "text-emerald-400" : "text-red-400")}>
+        <p className={"text-xs " + (copyMsg.ok ? "text-emerald-700 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
           {copyMsg.text}
         </p>
       ) : null}
 
-      <p className="text-xs text-gray-500">
+      <p className={`text-xs ${TEXT_MUTED}`}>
         A coluna <strong>Ações</strong> (entradas p/ cobrir o GTD) e as taxas são
         internas do Admin — não aparecem no portal público.
       </p>
 
-      <div className="overflow-x-auto rounded-lg border border-white/[0.08]">
+      <div className={`overflow-x-auto rounded-lg border ${BORDER_SUBTLE}`}>
         <table className="w-full border-collapse text-sm">
-          <thead className="bg-white/[0.02] text-left">
+          <thead className="bg-gray-50 dark:bg-white/[0.02] text-left">
             <tr>
               {HOT_FIELDS.map((f) => (
                 <th
                   key={f.key}
-                  className="whitespace-nowrap px-2 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500"
+                  className={`whitespace-nowrap px-2 py-2 text-xs font-semibold uppercase tracking-wide ${TEXT_MUTED}`}
                 >
                   {f.label}
                 </th>
               ))}
-              <th className="whitespace-nowrap px-2 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-400">
+              <th className="whitespace-nowrap px-2 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
                 Ações 🔒
               </th>
               <th className="px-2 py-2" />
@@ -268,7 +278,7 @@ export function GradeTable({
               <tr>
                 <td
                   colSpan={HOT_FIELDS.length + 2}
-                  className="px-3 py-6 text-center text-gray-500"
+                  className={`px-3 py-6 text-center ${TEXT_MUTED}`}
                 >
                   Nenhum torneio em {ptWeekday(day)}.
                 </td>
@@ -300,19 +310,19 @@ function GradeRow({
   );
 
   return (
-    <tr className="border-t border-white/[0.06] transition-colors hover:bg-white/[0.02]">
+    <tr className={`border-t ${BORDER_HAIRLINE} transition-colors ${ROW_HOVER}`}>
       {HOT_FIELDS.map((f) => (
         <td key={f.key} className="px-2 py-1 align-top">
           <EditableCell id={row.id} field={f} value={row[f.key as keyof TournamentRow]} canEdit={canEdit} />
         </td>
       ))}
-      <td className="px-2 py-1 text-center font-medium text-emerald-400">
+      <td className="px-2 py-1 text-center font-medium text-emerald-700 dark:text-emerald-400">
         {field?.requiredEntries ?? "—"}
       </td>
       <td className="px-2 py-1 text-right">
         <button
           onClick={onOpenDetail}
-          className="rounded border border-white/[0.12] px-2 py-1 text-xs text-gray-300 hover:border-white/[0.2] hover:bg-white/[0.05]"
+          className={`rounded border border-gray-200 dark:border-white/[0.12] px-2 py-1 text-xs ${TEXT_BODY} hover:border-gray-300 dark:hover:border-white/[0.2] hover:bg-gray-50 dark:hover:bg-white/[0.05]`}
           title="Ver / editar todos os campos"
         >
           ⋯
@@ -356,12 +366,12 @@ function EditableCell({
   }
 
   const base =
-    "w-full rounded border bg-transparent px-1.5 py-1 text-sm text-gray-200 outline-none " +
+    `w-full rounded border bg-transparent px-1.5 py-1 text-sm ${TEXT_BODY} outline-none ` +
     (error
       ? "border-red-500"
       : pending
         ? "border-amber-400"
-        : "border-transparent hover:border-white/[0.12] focus:border-white/[0.3]");
+        : "border-transparent hover:border-gray-300 dark:hover:border-white/[0.12] focus:border-gray-400 dark:focus:border-white/[0.3]");
 
   if (field.kind === "bool") {
     return (
@@ -385,11 +395,11 @@ function EditableCell({
         className={base + " min-w-[7rem]"}
         title={error ?? undefined}
       >
-        <option value="" className="bg-[#121316]">
+        <option value="" className="bg-white dark:bg-[#121316]">
           —
         </option>
         {field.options?.map((opt) => (
-          <option key={opt} value={opt} className="bg-[#121316]">
+          <option key={opt} value={opt} className="bg-white dark:bg-[#121316]">
             {field.key === "dayOfWeek" ? ptWeekday(opt) : opt}
           </option>
         ))}
@@ -483,18 +493,18 @@ function DetailDrawer({
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/60" onClick={onClose}>
       <div
-        className="h-full w-full max-w-2xl overflow-y-auto bg-[#121316] p-6 text-white shadow-xl"
+        className={`h-full w-full max-w-2xl overflow-y-auto ${SURFACE_ELEVATED_BG} p-6 ${TEXT_PRIMARY} shadow-xl`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">{row.shortName ?? row.name}</h2>
-          <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-200">
+          <h2 className={`text-lg font-semibold ${TEXT_PRIMARY}`}>{row.shortName ?? row.name}</h2>
+          <button onClick={onClose} className={`text-sm ${TEXT_MUTED} hover:text-gray-700 dark:hover:text-gray-200`}>
             Fechar ✕
           </button>
         </div>
 
         {!canEdit ? (
-          <p className="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-300">
+          <p className="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-600 dark:text-amber-300">
             Somente leitura (Operacional).
           </p>
         ) : null}
@@ -503,7 +513,7 @@ function DetailDrawer({
           <fieldset disabled={!canEdit} className="flex flex-col gap-5">
             {sections.map(([section, fields]) => (
               <div key={section}>
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <h3 className={`mb-2 text-xs font-semibold uppercase tracking-wide ${TEXT_MUTED}`}>
                   {section}
                 </h3>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -516,13 +526,13 @@ function DetailDrawer({
           </fieldset>
 
           {error ? (
-            <p role="alert" className="mt-4 text-sm text-red-400">
+            <p role="alert" className="mt-4 text-sm text-red-600 dark:text-red-400">
               {error}
             </p>
           ) : null}
 
           {canEdit ? (
-            <div className="sticky bottom-0 mt-6 flex gap-2 bg-[#121316] py-3">
+            <div className={`sticky bottom-0 mt-6 flex gap-2 ${SURFACE_ELEVATED_BG} py-3`}>
               <button
                 type="submit"
                 disabled={pending}
@@ -533,7 +543,7 @@ function DetailDrawer({
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-lg border border-white/[0.12] px-4 py-2 text-sm font-medium text-gray-300 hover:border-white/[0.2] hover:bg-white/[0.05]"
+                className={`rounded-lg border border-gray-200 dark:border-white/[0.12] px-4 py-2 text-sm font-medium ${TEXT_BODY} hover:border-gray-300 dark:hover:border-white/[0.2] hover:bg-gray-50 dark:hover:bg-white/[0.05]`}
               >
                 Cancelar
               </button>
@@ -541,7 +551,7 @@ function DetailDrawer({
                 type="button"
                 onClick={handleDuplicate}
                 disabled={pending}
-                className="rounded-lg border border-white/[0.12] px-4 py-2 text-sm font-medium text-gray-300 hover:border-white/[0.2] hover:bg-white/[0.05] disabled:opacity-60"
+                className={`rounded-lg border border-gray-200 dark:border-white/[0.12] px-4 py-2 text-sm font-medium ${TEXT_BODY} hover:border-gray-300 dark:hover:border-white/[0.2] hover:bg-gray-50 dark:hover:bg-white/[0.05] disabled:opacity-60`}
               >
                 Duplicar torneio
               </button>
@@ -549,7 +559,7 @@ function DetailDrawer({
                 type="button"
                 onClick={handleDelete}
                 disabled={pending}
-                className="ml-auto rounded-lg border border-red-500/30 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 disabled:opacity-60"
+                className="ml-auto rounded-lg border border-red-500/30 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 disabled:opacity-60"
               >
                 Excluir torneio
               </button>
@@ -563,27 +573,27 @@ function DetailDrawer({
 
 function DrawerField({ field, value }: { field: FieldMeta; value: CellValue }) {
   const cls =
-    "w-full rounded-lg border border-white/[0.12] bg-white/[0.03] px-2 py-1.5 text-sm text-gray-100 outline-none focus:border-white/[0.3] disabled:opacity-70";
+    `w-full rounded-lg border border-gray-200 dark:border-white/[0.12] bg-gray-50 dark:bg-white/[0.03] px-2 py-1.5 text-sm ${TEXT_BODY} outline-none focus:border-gray-400 dark:focus:border-white/[0.3] disabled:opacity-70`;
 
   if (field.kind === "bool") {
     return (
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" name={field.key} defaultChecked={Boolean(value)} className="h-4 w-4" />
-        <span className="text-gray-300">{field.label}</span>
+        <span className={TEXT_BODY}>{field.label}</span>
       </label>
     );
   }
 
   return (
     <label className="flex flex-col gap-1 text-sm">
-      <span className="font-medium text-gray-400">{field.label}</span>
+      <span className={`font-medium ${TEXT_SECONDARY}`}>{field.label}</span>
       {field.kind === "select" ? (
         <select name={field.key} defaultValue={selectDisplayValue(field.key, value)} className={cls}>
-          <option value="" className="bg-[#121316]">
+          <option value="" className="bg-white dark:bg-[#121316]">
             —
           </option>
           {field.options?.map((opt) => (
-            <option key={opt} value={opt} className="bg-[#121316]">
+            <option key={opt} value={opt} className="bg-white dark:bg-[#121316]">
               {field.key === "dayOfWeek" ? ptWeekday(opt) : opt}
             </option>
           ))}

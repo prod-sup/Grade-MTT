@@ -3,7 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 import { checkin, type CheckinState } from "./portal/actions";
 import type { HandicapOption, FusoOption } from "@/lib/portal/context-options";
-import { GOLD_BUTTON } from "@/lib/ui/premium";
+import { GOLD_BUTTON, TEXT_PRIMARY, TEXT_BODY } from "@/lib/ui/premium";
 
 const initialState: CheckinState = {};
 
@@ -33,22 +33,22 @@ export function CheckinForm({
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-gray-300">Nome</span>
+        <span className={`font-medium ${TEXT_BODY}`}>Nome</span>
         <input name="name" required autoFocus className={inputCls} />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-gray-300">E-mail</span>
+        <span className={`font-medium ${TEXT_BODY}`}>E-mail</span>
         <input type="email" name="email" required className={inputCls} />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-gray-300">Clube</span>
+        <span className={`font-medium ${TEXT_BODY}`}>Clube</span>
         <input name="club" placeholder="Opcional" className={inputCls} />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-gray-300">WhatsApp</span>
+        <span className={`font-medium ${TEXT_BODY}`}>WhatsApp</span>
         <input
           type="tel"
           name="phone"
@@ -59,7 +59,7 @@ export function CheckinForm({
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-gray-300">País (moeda)</span>
+        <span className={`font-medium ${TEXT_BODY}`}>País (moeda)</span>
         <select
           name="handicapId"
           value={handicapId}
@@ -67,7 +67,7 @@ export function CheckinForm({
           className={inputCls}
         >
           {handicaps.map((h) => (
-            <option key={h.id} value={h.id} className="bg-[#121316] text-white">
+            <option key={h.id} value={h.id} className="bg-white text-gray-900 dark:bg-[#121316] dark:text-white">
               {h.country}
               {h.currencyLabel ? ` (${h.currencyLabel})` : ""}
             </option>
@@ -76,7 +76,7 @@ export function CheckinForm({
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-gray-300">Fuso horário</span>
+        <span className={`font-medium ${TEXT_BODY}`}>Fuso horário</span>
         <select
           name="fuso"
           value={fuso}
@@ -84,7 +84,7 @@ export function CheckinForm({
           className={inputCls}
         >
           {fusos.map((f) => (
-            <option key={f.value} value={f.value} className="bg-[#121316] text-white">
+            <option key={f.value} value={f.value} className="bg-white text-gray-900 dark:bg-[#121316] dark:text-white">
               {f.label}
             </option>
           ))}
@@ -104,5 +104,4 @@ export function CheckinForm({
   );
 }
 
-const inputCls =
-  "rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2 text-white outline-none transition-colors placeholder:text-gray-500 focus:border-[#d4af37]/50 focus:bg-white/[0.06]";
+const inputCls = `rounded-xl border border-gray-200 dark:border-white/[0.1] bg-gray-50 dark:bg-white/[0.04] px-3 py-2 outline-none transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-[#d4af37]/50 focus:bg-white dark:focus:bg-white/[0.06] ${TEXT_PRIMARY}`;

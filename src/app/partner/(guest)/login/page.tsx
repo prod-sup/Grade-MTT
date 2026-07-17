@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentPartner } from "@/lib/partner/dal";
-import { GLASS_CARD, GLOW_GOLD_STATIC } from "@/lib/ui/premium";
+import { GLASS_CARD, GLOW_GOLD_STATIC, TEXT_BODY, TEXT_MUTED } from "@/lib/ui/premium";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = {
@@ -28,8 +28,11 @@ export default async function PartnerLoginPage({
 
       <LoginForm />
 
-      <p className="mt-6 text-center text-xs text-gray-500">
-        <Link href="/partner/forgot-password" className="text-gray-300 underline hover:text-white">
+      <p className={`mt-6 text-center text-xs ${TEXT_MUTED}`}>
+        <Link
+          href="/partner/forgot-password"
+          className={`${TEXT_BODY} underline hover:text-gray-900 dark:hover:text-white`}
+        >
           Esqueci minha senha
         </Link>
       </p>

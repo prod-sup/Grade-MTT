@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { GOLD_GRADIENT_BG } from "@/lib/ui/premium";
+import { GOLD_GRADIENT_BG, TEXT_SECONDARY } from "@/lib/ui/premium";
 
 const ITEMS: { href: string; label: string; exact?: boolean }[] = [
   { href: "/partner", label: "Painel", exact: true },
@@ -25,7 +25,7 @@ export function PartnerNav() {
               "rounded-xl px-3 py-1.5 text-sm font-medium transition-all duration-200 " +
               (active
                 ? `${GOLD_GRADIENT_BG} text-black font-semibold`
-                : "text-gray-400 hover:bg-white/[0.05] hover:text-white")
+                : `${TEXT_SECONDARY} hover:bg-gray-50 dark:hover:bg-white/[0.05] hover:text-gray-900 dark:hover:text-white`)
             }
           >
             {item.label}

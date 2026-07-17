@@ -3,6 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, isAdmin } from "@/lib/auth/dal";
 import { GradeTable, type TournamentRow } from "./grade-table";
 import { setMonthArchived } from "./actions";
+import {
+  TEXT_PRIMARY,
+  TEXT_BODY,
+  TEXT_SECONDARY,
+  TEXT_MUTED,
+  BORDER_SUBTLE,
+  BORDER_HAIRLINE,
+} from "@/lib/ui/premium";
 
 const MONTH_PT = ["", "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 function ymLabel(ym: string): string {
@@ -161,8 +169,8 @@ export default async function GradePage({
     <div className="mx-auto max-w-full">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Grade de Torneios</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className={`text-2xl font-semibold ${TEXT_PRIMARY}`}>Grade de Torneios</h1>
+          <p className={`mt-1 text-sm ${TEXT_MUTED}`}>
             Base: USD e GMT-3. Cada torneio é único (editado por data). Edição
             inline nas colunas principais; use ⋯ para os demais campos.
           </p>
@@ -181,22 +189,22 @@ export default async function GradePage({
       {/* Navegação por semana */}
       <div className="mt-4 flex items-center justify-between gap-2">
         <WeekNavButton href={`/admin/grade?week=${isoDayUTC(prevWeek)}`} enabled={hasPrev} label="‹ Semana anterior" />
-        <span className="text-sm font-medium text-gray-300">Semana {weekLabel}</span>
+        <span className={`text-sm font-medium ${TEXT_BODY}`}>Semana {weekLabel}</span>
         <WeekNavButton href={`/admin/grade?week=${isoDayUTC(nextWeek)}`} enabled={hasNext} label="Próxima semana ›" />
       </div>
 
       {/* Export Excel (leitura — ADMIN e OPERACIONAL) */}
       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-gray-500">Exportar esta semana:</span>
+        <span className={TEXT_MUTED}>Exportar esta semana:</span>
         <a
           href={`/admin/grade/export?from=${isoDayUTC(weekStart)}&to=${isoDayUTC(new Date(weekEnd.getTime() - DAY_MS))}&format=horizontal`}
-          className="rounded-lg border border-white/[0.12] px-3 py-1.5 font-medium text-gray-300 transition-colors hover:border-white/[0.2] hover:bg-white/[0.04]"
+          className={`rounded-lg border border-gray-200 dark:border-white/[0.12] px-3 py-1.5 font-medium ${TEXT_BODY} transition-colors hover:border-gray-300 dark:hover:border-white/[0.2] hover:bg-gray-50 dark:hover:bg-white/[0.04]`}
         >
           ⬇ Horizontal (base)
         </a>
         <a
           href={`/admin/grade/export?from=${isoDayUTC(weekStart)}&to=${isoDayUTC(new Date(weekEnd.getTime() - DAY_MS))}&format=vertical`}
-          className="rounded-lg border border-white/[0.12] px-3 py-1.5 font-medium text-gray-300 transition-colors hover:border-white/[0.2] hover:bg-white/[0.04]"
+          className={`rounded-lg border border-gray-200 dark:border-white/[0.12] px-3 py-1.5 font-medium ${TEXT_BODY} transition-colors hover:border-gray-300 dark:hover:border-white/[0.2] hover:bg-gray-50 dark:hover:bg-white/[0.04]`}
         >
           ⬇ Vertical (transposto)
         </a>
@@ -205,7 +213,7 @@ export default async function GradePage({
       {/* Painel de meses — arquivo/histórico */}
       {months.length > 0 ? (
         <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-          <span className="text-gray-500">Meses:</span>
+          <span className={TEXT_MUTED}>Meses:</span>
           {months.map((m) => {
             const isArchived = m.total > 0 && m.archived === m.total;
             const toggle = setMonthArchived.bind(null, m.ym, !isArchived);
@@ -215,8 +223,8 @@ export default async function GradePage({
                 className={
                   "inline-flex items-center gap-2 rounded-lg border px-2 py-1 " +
                   (isArchived
-                    ? "border-white/[0.08] bg-white/[0.03] text-gray-500"
-                    : "border-white/[0.12] text-gray-300")
+                    ? `${BORDER_SUBTLE} bg-gray-50 dark:bg-white/[0.03] ${TEXT_MUTED}`
+                    : `border-gray-200 dark:border-white/[0.12] ${TEXT_BODY}`)
                 }
               >
                 <Link href={`/admin/grade?week=${isoDayUTC(startOfWeekUTC(new Date(m.ym + "-01T00:00:00Z")))}`} className="font-medium hover:underline">
@@ -229,8 +237,8 @@ export default async function GradePage({
                       className={
                         "rounded px-1.5 py-0.5 text-xs font-medium " +
                         (isArchived
-                          ? "text-emerald-400 hover:bg-emerald-500/10"
-                          : "text-amber-400 hover:bg-amber-500/10")
+                          ? "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
+                          : "text-amber-600 dark:text-amber-300 hover:bg-amber-500/10")
                       }
                       title={isArchived ? "Reabrir no portal" : "Fechar mês (sai do portal, vira histórico)"}
                     >
@@ -245,13 +253,13 @@ export default async function GradePage({
       ) : null}
 
       {!canEdit ? (
-        <p className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+        <p className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-600 dark:text-amber-300">
           Modo somente leitura (Operacional). Você vê todos os dados e cálculos,
           mas não pode editar.
         </p>
       ) : null}
 
-      <p className="mt-4 text-sm text-gray-500">
+      <p className={`mt-4 text-sm ${TEXT_MUTED}`}>
         {tournaments.length} torneios nesta semana.
       </p>
 
@@ -272,13 +280,13 @@ function WeekNavButton({ href, enabled, label }: { href: string; enabled: boolea
   const cls = "rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors";
   if (!enabled) {
     return (
-      <span className={`${cls} cursor-not-allowed border-white/[0.06] text-gray-600`}>
+      <span className={`${cls} cursor-not-allowed ${BORDER_HAIRLINE} ${TEXT_MUTED}`}>
         {label}
       </span>
     );
   }
   return (
-    <Link href={href} className={`${cls} border-white/[0.12] text-gray-300 hover:border-white/[0.2] hover:bg-white/[0.04]`}>
+    <Link href={href} className={`${cls} border-gray-200 dark:border-white/[0.12] ${TEXT_BODY} hover:border-gray-300 dark:hover:border-white/[0.2] hover:bg-gray-50 dark:hover:bg-white/[0.04]`}>
       {label}
     </Link>
   );

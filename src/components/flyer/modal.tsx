@@ -8,6 +8,16 @@ import {
   type FlyerLayout,
   type FlyerTournament,
 } from "@/lib/flyer/types";
+import {
+  BORDER_SUBTLE,
+  GHOST_BUTTON,
+  GOLD_BUTTON,
+  ROW_HOVER,
+  SURFACE_ELEVATED_BG,
+  TEXT_BODY,
+  TEXT_PRIMARY,
+  TEXT_SECONDARY,
+} from "@/lib/ui/premium";
 
 export function FlyerModal({
   available,
@@ -70,7 +80,7 @@ export function FlyerModal({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-md border border-amber-400 px-3 py-1.5 text-sm font-medium text-amber-700 transition-colors hover:bg-amber-50 dark:border-amber-500 dark:text-amber-400 dark:hover:bg-amber-950/40"
+        className={`px-3 py-1.5 text-sm font-medium ${GHOST_BUTTON}`}
       >
         {triggerLabel}
       </button>
@@ -81,14 +91,14 @@ export function FlyerModal({
           onClick={close}
         >
           <div
-            className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-5 shadow-xl dark:bg-zinc-950"
+            className={`max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-lg p-5 shadow-xl ${SURFACE_ELEVATED_BG}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Gerar Flyer</h2>
+              <h2 className={`text-lg font-semibold ${TEXT_PRIMARY}`}>Gerar Flyer</h2>
               <button
                 onClick={close}
-                className="text-sm text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                className={`text-sm ${TEXT_SECONDARY} hover:text-gray-800 dark:hover:text-gray-200`}
               >
                 Fechar ✕
               </button>
@@ -96,12 +106,12 @@ export function FlyerModal({
 
             {!layout ? (
               <div className="flex flex-col gap-2">
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">Escolha o layout do flyer:</p>
+                <p className={`text-sm ${TEXT_SECONDARY}`}>Escolha o layout do flyer:</p>
                 {FLYER_LAYOUT_ORDER.map((key) => (
                   <button
                     key={key}
                     onClick={() => setLayout(key)}
-                    className="rounded-md border border-zinc-300 px-3 py-2 text-left text-sm hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                    className={`rounded-md border px-3 py-2 text-left text-sm ${BORDER_SUBTLE} ${ROW_HOVER}`}
                   >
                     {FLYER_LAYOUT_LABELS[key]}
                   </button>
@@ -110,7 +120,7 @@ export function FlyerModal({
             ) : (
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                  <p className={`text-sm ${TEXT_BODY}`}>
                     {FLYER_LAYOUT_LABELS[layout]} — selecione{" "}
                     {limit === 1 ? "1 torneio" : `até ${limit} torneios`} {sourceHint}.
                   </p>
@@ -119,15 +129,15 @@ export function FlyerModal({
                       setLayout(null);
                       setSelected(new Set());
                     }}
-                    className="shrink-0 text-xs text-zinc-500 hover:underline"
+                    className={`shrink-0 text-xs ${TEXT_SECONDARY} hover:underline`}
                   >
                     Trocar layout
                   </button>
                 </div>
 
-                <div className="flex flex-col gap-1 rounded-md border border-zinc-200 p-2 dark:border-zinc-800">
+                <div className={`flex flex-col gap-1 rounded-md border p-2 ${BORDER_SUBTLE}`}>
                   {available.length === 0 ? (
-                    <p className="px-2 py-4 text-center text-sm text-zinc-500">
+                    <p className={`px-2 py-4 text-center text-sm ${TEXT_SECONDARY}`}>
                       Nenhum torneio disponível.
                     </p>
                   ) : (
@@ -139,7 +149,7 @@ export function FlyerModal({
                           key={t.id}
                           className={
                             "flex items-center gap-2 rounded px-2 py-1.5 text-sm " +
-                            (disabled ? "opacity-40" : "hover:bg-zinc-100 dark:hover:bg-zinc-900")
+                            (disabled ? "opacity-40" : ROW_HOVER)
                           }
                         >
                           <input
@@ -150,7 +160,7 @@ export function FlyerModal({
                             className="h-4 w-4"
                           />
                           <span className="font-medium">{t.startTime}</span>
-                          <span className="truncate text-zinc-700 dark:text-zinc-300">{t.name}</span>
+                          <span className={`truncate ${TEXT_BODY}`}>{t.name}</span>
                         </label>
                       );
                     })
@@ -161,7 +171,7 @@ export function FlyerModal({
                   type="button"
                   disabled={selected.size === 0 || busy}
                   onClick={handleConfirm}
-                  className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+                  className={`px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60 ${GOLD_BUTTON}`}
                 >
                   {busy ? "Gerando…" : `${actionLabel} (${selected.size}/${limit})`}
                 </button>

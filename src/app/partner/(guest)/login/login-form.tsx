@@ -2,12 +2,12 @@
 
 import { useActionState } from "react";
 import { partnerLogin, type FormState } from "../actions";
-import { GOLD_BUTTON } from "@/lib/ui/premium";
+import { GOLD_BUTTON, TEXT_BODY, TEXT_PRIMARY } from "@/lib/ui/premium";
 
 const initialState: FormState = {};
 
 const inputCls =
-  "rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2 text-white outline-none transition-colors placeholder:text-gray-500 focus:border-[#d4af37]/50 focus:bg-white/[0.06]";
+  `rounded-xl border border-gray-300 dark:border-white/[0.1] bg-gray-50 dark:bg-white/[0.04] px-3 py-2 ${TEXT_PRIMARY} outline-none transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-[#d4af37]/50 focus:bg-white dark:focus:bg-white/[0.06]`;
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState(partnerLogin, initialState);
@@ -15,12 +15,12 @@ export function LoginForm() {
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-gray-300">E-mail</span>
+        <span className={`font-medium ${TEXT_BODY}`}>E-mail</span>
         <input type="email" name="email" required autoComplete="username" autoFocus className={inputCls} />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-gray-300">Senha</span>
+        <span className={`font-medium ${TEXT_BODY}`}>Senha</span>
         <input type="password" name="password" required autoComplete="current-password" className={inputCls} />
       </label>
 

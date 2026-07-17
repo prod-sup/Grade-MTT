@@ -2,12 +2,12 @@
 
 import { useActionState } from "react";
 import { completeSignup, type FormState } from "../actions";
-import { GOLD_BUTTON } from "@/lib/ui/premium";
+import { BORDER_SUBTLE, GOLD_BUTTON, TEXT_BODY, TEXT_PRIMARY, TEXT_SECONDARY } from "@/lib/ui/premium";
 
 const initialState: FormState = {};
 
 const inputCls =
-  "rounded-xl border border-white/[0.1] bg-white/[0.04] px-3 py-2 text-white outline-none transition-colors placeholder:text-gray-500 focus:border-[#d4af37]/50 focus:bg-white/[0.06]";
+  `rounded-xl border border-gray-300 dark:border-white/[0.1] bg-gray-50 dark:bg-white/[0.04] px-3 py-2 ${TEXT_PRIMARY} outline-none transition-colors placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-[#d4af37]/50 focus:bg-white dark:focus:bg-white/[0.06]`;
 
 export function SignupForm({ token, email }: { token: string; email: string }) {
   const [state, formAction, pending] = useActionState(completeSignup, initialState);
@@ -17,24 +17,24 @@ export function SignupForm({ token, email }: { token: string; email: string }) {
       <input type="hidden" name="token" value={token} />
 
       <div className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-gray-300">E-mail convidado</span>
-        <p className="rounded-xl border border-white/[0.08] bg-white/[0.02] px-3 py-2 text-gray-400">
+        <span className={`font-medium ${TEXT_BODY}`}>E-mail convidado</span>
+        <p className={`rounded-xl border ${BORDER_SUBTLE} bg-gray-50 dark:bg-white/[0.02] px-3 py-2 ${TEXT_SECONDARY}`}>
           {email}
         </p>
       </div>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-gray-300">Nome do responsável</span>
+        <span className={`font-medium ${TEXT_BODY}`}>Nome do responsável</span>
         <input name="contactName" required autoFocus className={inputCls} />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-gray-300">Clube / Liga / Agente</span>
+        <span className={`font-medium ${TEXT_BODY}`}>Clube / Liga / Agente</span>
         <input name="clubName" required className={inputCls} />
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-gray-300">Senha</span>
+        <span className={`font-medium ${TEXT_BODY}`}>Senha</span>
         <input
           type="password"
           name="password"
@@ -46,7 +46,7 @@ export function SignupForm({ token, email }: { token: string; email: string }) {
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-gray-300">Confirmar senha</span>
+        <span className={`font-medium ${TEXT_BODY}`}>Confirmar senha</span>
         <input
           type="password"
           name="confirmPassword"

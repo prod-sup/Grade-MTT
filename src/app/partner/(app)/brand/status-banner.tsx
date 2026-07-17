@@ -1,3 +1,5 @@
+import { TEXT_BODY, TEXT_SECONDARY } from "@/lib/ui/premium";
+
 /** Banner de status da marca — usado no dashboard e em "Minha Marca". */
 export function StatusBanner({
   status,
@@ -10,8 +12,10 @@ export function StatusBanner({
 }) {
   if (!hasBrand) {
     return (
-      <p className="rounded-2xl border border-white/[0.1] bg-white/[0.03] px-4 py-3 text-sm text-gray-400">
-        Você ainda não enviou sua marca. Vá em <strong className="text-gray-200">Minha Marca</strong>{" "}
+      <p
+        className={`rounded-2xl border border-gray-200 dark:border-white/[0.1] bg-gray-50 dark:bg-white/[0.03] px-4 py-3 text-sm ${TEXT_SECONDARY}`}
+      >
+        Você ainda não enviou sua marca. Vá em <strong className={TEXT_BODY}>Minha Marca</strong>{" "}
         para enviar sua logo, marca d&apos;água e telefone/ID do clube.
       </p>
     );
@@ -33,7 +37,7 @@ export function StatusBanner({
           Sua marca foi <strong>recusada</strong> pelo Marketing. Ajuste e reenvie em{" "}
           <strong>Minha Marca</strong>.
         </p>
-        {reviewNote ? <p className="mt-1 text-red-200/80">Motivo: {reviewNote}</p> : null}
+        {reviewNote ? <p className="mt-1 text-red-700/80 dark:text-red-200/80">Motivo: {reviewNote}</p> : null}
       </div>
     );
   }

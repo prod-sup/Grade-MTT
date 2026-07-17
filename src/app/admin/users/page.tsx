@@ -1,5 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/dal";
+import {
+  TEXT_PRIMARY,
+  TEXT_BODY,
+  TEXT_SECONDARY,
+  TEXT_MUTED,
+  BORDER_SUBTLE,
+  BORDER_HAIRLINE,
+  ROW_HOVER,
+} from "@/lib/ui/premium";
 
 const dateFmt = new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "short",
@@ -18,16 +27,14 @@ export default async function UsersPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
-        Check-ins do Portal
-      </h1>
-      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+      <h1 className={`text-2xl font-semibold ${TEXT_PRIMARY}`}>Check-ins do Portal</h1>
+      <p className={`mt-1 text-sm ${TEXT_MUTED}`}>
         Visitantes que se identificaram na landing pública ({logs.length}).
       </p>
 
-      <div className="mt-6 overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
+      <div className={`mt-6 overflow-x-auto rounded-lg border ${BORDER_SUBTLE}`}>
         <table className="w-full border-collapse text-sm">
-          <thead className="bg-zinc-50 text-left dark:bg-zinc-900">
+          <thead className="bg-gray-50 dark:bg-white/[0.02] text-left">
             <tr>
               <Th>Nome</Th>
               <Th>E-mail</Th>
@@ -40,8 +47,8 @@ export default async function UsersPage() {
           </thead>
           <tbody>
             {logs.map((l) => (
-              <tr key={l.id} className="border-t border-zinc-100 dark:border-zinc-800">
-                <Td className="font-medium">{l.name}</Td>
+              <tr key={l.id} className={`border-t ${BORDER_HAIRLINE} transition-colors ${ROW_HOVER}`}>
+                <Td className={`font-medium ${TEXT_BODY}`}>{l.name}</Td>
                 <Td>{l.email}</Td>
                 <Td>{l.phone ?? "—"}</Td>
                 <Td>{l.club ?? "—"}</Td>
@@ -52,7 +59,7 @@ export default async function UsersPage() {
             ))}
             {logs.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-3 py-6 text-center text-zinc-500">
+                <td colSpan={7} className={`px-3 py-6 text-center ${TEXT_MUTED}`}>
                   Nenhum check-in ainda.
                 </td>
               </tr>
@@ -66,11 +73,11 @@ export default async function UsersPage() {
 
 function Th({ children }: { children: React.ReactNode }) {
   return (
-    <th className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+    <th className={`px-3 py-2 text-xs font-semibold uppercase tracking-wide ${TEXT_MUTED}`}>
       {children}
     </th>
   );
 }
 function Td({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <td className={`px-3 py-2 text-zinc-800 dark:text-zinc-200 ${className}`}>{children}</td>;
+  return <td className={`px-3 py-2 ${TEXT_SECONDARY} ${className}`}>{children}</td>;
 }

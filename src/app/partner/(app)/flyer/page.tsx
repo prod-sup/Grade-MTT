@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePartner } from "@/lib/partner/dal";
 import { toFlyerTournament } from "@/lib/flyer/format";
 import type { PartnerOverlay } from "@/lib/flyer/types";
+import { TEXT_MUTED, TEXT_PRIMARY } from "@/lib/ui/premium";
 import { PartnerFlyerManager } from "./partner-flyer-manager";
 
 const DAY_MS = 86_400_000;
@@ -59,8 +60,8 @@ export default async function PartnerFlyerPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold text-white">Gerar Flyer</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className={`text-2xl font-semibold ${TEXT_PRIMARY}`}>Gerar Flyer</h1>
+        <p className={`mt-1 text-sm ${TEXT_MUTED}`}>
           {brand?.status === "APPROVED"
             ? "Sua marca está aplicada automaticamente nos flyers gerados abaixo."
             : "Sua marca ainda não foi aprovada — os flyers saem sem a customização."}

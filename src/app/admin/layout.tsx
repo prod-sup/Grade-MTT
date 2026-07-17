@@ -1,6 +1,16 @@
 import { requireUser } from "@/lib/auth/dal";
 import { logout } from "@/app/(auth)/actions";
 import { AdminNav } from "./_components/admin-nav";
+import { ThemeToggle } from "@/components/theme-toggle";
+import {
+  SURFACE_BG,
+  SURFACE_ELEVATED_BG,
+  TEXT_PRIMARY,
+  TEXT_BODY,
+  TEXT_SECONDARY,
+  TEXT_MUTED,
+  BORDER_SUBTLE,
+} from "@/lib/ui/premium";
 
 const ROLE_BADGE: Record<string, string> = {
   ADMIN: "ADMIN",
@@ -9,9 +19,9 @@ const ROLE_BADGE: Record<string, string> = {
 };
 
 const ROLE_BADGE_CLS: Record<string, string> = {
-  ADMIN: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
-  MARKETING: "bg-violet-500/10 text-violet-300 border border-violet-500/20",
-  OPERACIONAL: "bg-amber-500/10 text-amber-300 border border-amber-500/20",
+  ADMIN: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20",
+  MARKETING: "bg-violet-500/10 text-violet-700 dark:text-violet-300 border border-violet-500/20",
+  OPERACIONAL: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20",
 };
 
 export default async function AdminLayout({
@@ -24,23 +34,26 @@ export default async function AdminLayout({
   const user = await requireUser();
 
   return (
-    <div className="flex min-h-screen bg-[#0b0c0e] text-white">
+    <div className={`flex min-h-screen ${SURFACE_BG} ${TEXT_PRIMARY}`}>
       {/* Sidebar */}
-      <aside className="flex w-60 flex-col justify-between border-r border-white/[0.08] bg-[#121316] p-4">
+      <aside className={`flex w-60 flex-col justify-between border-r ${BORDER_SUBTLE} ${SURFACE_ELEVATED_BG} p-4`}>
         <div className="flex flex-col gap-6">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
-              Grade MTT
-            </p>
-            <p className="text-sm font-semibold text-white">Backoffice</p>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className={`text-xs font-semibold uppercase tracking-[0.2em] ${TEXT_MUTED}`}>
+                Grade MTT
+              </p>
+              <p className={`text-sm font-semibold ${TEXT_PRIMARY}`}>Backoffice</p>
+            </div>
+            <ThemeToggle />
           </div>
           <AdminNav role={user.role} />
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-white/[0.08] pt-4">
+        <div className={`flex flex-col gap-3 border-t ${BORDER_SUBTLE} pt-4`}>
           <div className="text-sm">
-            <p className="truncate font-medium text-gray-200">{user.name}</p>
-            <p className="truncate text-xs text-gray-500">{user.email}</p>
+            <p className={`truncate font-medium ${TEXT_BODY}`}>{user.name}</p>
+            <p className={`truncate text-xs ${TEXT_MUTED}`}>{user.email}</p>
             <span
               className={
                 "mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium " +
@@ -54,7 +67,7 @@ export default async function AdminLayout({
           <form action={logout}>
             <button
               type="submit"
-              className="w-full rounded-lg border border-white/[0.1] px-3 py-2 text-sm font-medium text-gray-400 transition-colors hover:border-white/[0.2] hover:text-white"
+              className={`w-full rounded-lg border border-gray-300 dark:border-white/[0.1] px-3 py-2 text-sm font-medium ${TEXT_SECONDARY} transition-colors hover:border-gray-400 dark:hover:border-white/[0.2] hover:text-gray-900 dark:hover:text-white`}
             >
               Sair
             </button>
@@ -63,7 +76,7 @@ export default async function AdminLayout({
       </aside>
 
       {/* Conteúdo */}
-      <main className="flex-1 overflow-x-auto bg-[#0b0c0e] p-6">{children}</main>
+      <main className={`flex-1 overflow-x-auto ${SURFACE_BG} p-6`}>{children}</main>
     </div>
   );
 }

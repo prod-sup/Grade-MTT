@@ -168,10 +168,10 @@ export function GradeTable({
               key={w.en}
               onClick={() => setDay(w.en)}
               className={
-                "rounded-md px-3 py-1.5 text-sm font-medium transition-colors " +
+                "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors " +
                 (active
-                  ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                  : "bg-white text-zinc-600 hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800")
+                  ? "bg-white/[0.08] text-white"
+                  : "border border-white/[0.08] bg-white/[0.02] text-gray-400 hover:bg-white/[0.05] hover:text-gray-200")
               }
             >
               {w.pt}
@@ -187,7 +187,7 @@ export function GradeTable({
           <button
             onClick={runCreate}
             disabled={copying || !selectedISO}
-            className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
             title={`Adicionar novo torneio em ${ptWeekday(day)}`}
           >
             + Adicionar torneio
@@ -197,14 +197,12 @@ export function GradeTable({
 
       {/* Construtor de mês: cópia dia a dia / semana anterior (ADMIN, dia vazio) */}
       {canEdit && dayEmpty ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed border-emerald-300 bg-emerald-50 px-3 py-2 dark:border-emerald-800 dark:bg-emerald-950/40">
-          <span className="text-sm text-emerald-800 dark:text-emerald-300">
-            {ptWeekday(day)} está vazio.
-          </span>
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-emerald-500/30 bg-emerald-500/[0.06] px-3 py-2">
+          <span className="text-sm text-emerald-300">{ptWeekday(day)} está vazio.</span>
           <button
             onClick={runCopyDay}
             disabled={copying || !source || !selectedISO}
-            className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
             title={source ? `Copia ${ptWeekday(day)} de ${fmtISO(source)}` : "Sem dia anterior para copiar"}
           >
             {copying
@@ -216,42 +214,42 @@ export function GradeTable({
           <button
             onClick={runCopyWeek}
             disabled={copying || !weekStartISO}
-            className="rounded-md border border-emerald-600 px-3 py-1.5 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60 dark:text-emerald-400 dark:hover:bg-emerald-900/40"
+            className="rounded-lg border border-emerald-500/40 px-3 py-1.5 text-sm font-medium text-emerald-300 transition-colors hover:bg-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-60"
             title="Preenche a semana inteira copiando a semana anterior"
           >
             Copiar semana anterior completa
           </button>
           {copyMsg ? (
-            <span className={"text-xs " + (copyMsg.ok ? "text-emerald-700 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
+            <span className={"text-xs " + (copyMsg.ok ? "text-emerald-400" : "text-red-400")}>
               {copyMsg.text}
             </span>
           ) : null}
         </div>
       ) : null}
       {canEdit && !dayEmpty && copyMsg ? (
-        <p className={"text-xs " + (copyMsg.ok ? "text-emerald-700 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
+        <p className={"text-xs " + (copyMsg.ok ? "text-emerald-400" : "text-red-400")}>
           {copyMsg.text}
         </p>
       ) : null}
 
-      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+      <p className="text-xs text-gray-500">
         A coluna <strong>Ações</strong> (entradas p/ cobrir o GTD) e as taxas são
         internas do Admin — não aparecem no portal público.
       </p>
 
-      <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
+      <div className="overflow-x-auto rounded-lg border border-white/[0.08]">
         <table className="w-full border-collapse text-sm">
-          <thead className="bg-zinc-50 text-left dark:bg-zinc-900">
+          <thead className="bg-white/[0.02] text-left">
             <tr>
               {HOT_FIELDS.map((f) => (
                 <th
                   key={f.key}
-                  className="whitespace-nowrap px-2 py-2 text-xs font-semibold uppercase tracking-wide text-zinc-500"
+                  className="whitespace-nowrap px-2 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500"
                 >
                   {f.label}
                 </th>
               ))}
-              <th className="whitespace-nowrap px-2 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+              <th className="whitespace-nowrap px-2 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-400">
                 Ações 🔒
               </th>
               <th className="px-2 py-2" />
@@ -270,7 +268,7 @@ export function GradeTable({
               <tr>
                 <td
                   colSpan={HOT_FIELDS.length + 2}
-                  className="px-3 py-6 text-center text-zinc-500"
+                  className="px-3 py-6 text-center text-gray-500"
                 >
                   Nenhum torneio em {ptWeekday(day)}.
                 </td>
@@ -302,19 +300,19 @@ function GradeRow({
   );
 
   return (
-    <tr className="border-t border-zinc-100 dark:border-zinc-800">
+    <tr className="border-t border-white/[0.06] transition-colors hover:bg-white/[0.02]">
       {HOT_FIELDS.map((f) => (
         <td key={f.key} className="px-2 py-1 align-top">
           <EditableCell id={row.id} field={f} value={row[f.key as keyof TournamentRow]} canEdit={canEdit} />
         </td>
       ))}
-      <td className="px-2 py-1 text-center font-medium text-emerald-700 dark:text-emerald-400">
+      <td className="px-2 py-1 text-center font-medium text-emerald-400">
         {field?.requiredEntries ?? "—"}
       </td>
       <td className="px-2 py-1 text-right">
         <button
           onClick={onOpenDetail}
-          className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+          className="rounded border border-white/[0.12] px-2 py-1 text-xs text-gray-300 hover:border-white/[0.2] hover:bg-white/[0.05]"
           title="Ver / editar todos os campos"
         >
           ⋯
@@ -358,12 +356,12 @@ function EditableCell({
   }
 
   const base =
-    "w-full rounded border bg-transparent px-1.5 py-1 text-sm outline-none " +
+    "w-full rounded border bg-transparent px-1.5 py-1 text-sm text-gray-200 outline-none " +
     (error
       ? "border-red-500"
       : pending
         ? "border-amber-400"
-        : "border-transparent hover:border-zinc-300 focus:border-zinc-500 dark:hover:border-zinc-700");
+        : "border-transparent hover:border-white/[0.12] focus:border-white/[0.3]");
 
   if (field.kind === "bool") {
     return (
@@ -387,9 +385,11 @@ function EditableCell({
         className={base + " min-w-[7rem]"}
         title={error ?? undefined}
       >
-        <option value="">—</option>
+        <option value="" className="bg-[#121316]">
+          —
+        </option>
         {field.options?.map((opt) => (
-          <option key={opt} value={opt}>
+          <option key={opt} value={opt} className="bg-[#121316]">
             {field.key === "dayOfWeek" ? ptWeekday(opt) : opt}
           </option>
         ))}
@@ -481,25 +481,20 @@ function DetailDrawer({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/60" onClick={onClose}>
       <div
-        className="h-full w-full max-w-2xl overflow-y-auto bg-white p-6 shadow-xl dark:bg-zinc-950"
+        className="h-full w-full max-w-2xl overflow-y-auto bg-[#121316] p-6 text-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-            {row.shortName ?? row.name}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-sm text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
-          >
+          <h2 className="text-lg font-semibold text-white">{row.shortName ?? row.name}</h2>
+          <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-200">
             Fechar ✕
           </button>
         </div>
 
         {!canEdit ? (
-          <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+          <p className="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-300">
             Somente leitura (Operacional).
           </p>
         ) : null}
@@ -508,7 +503,7 @@ function DetailDrawer({
           <fieldset disabled={!canEdit} className="flex flex-col gap-5">
             {sections.map(([section, fields]) => (
               <div key={section}>
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
                   {section}
                 </h3>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -521,24 +516,24 @@ function DetailDrawer({
           </fieldset>
 
           {error ? (
-            <p role="alert" className="mt-4 text-sm text-red-600">
+            <p role="alert" className="mt-4 text-sm text-red-400">
               {error}
             </p>
           ) : null}
 
           {canEdit ? (
-            <div className="sticky bottom-0 mt-6 flex gap-2 bg-white py-3 dark:bg-zinc-950">
+            <div className="sticky bottom-0 mt-6 flex gap-2 bg-[#121316] py-3">
               <button
                 type="submit"
                 disabled={pending}
-                className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-60"
               >
                 {pending ? "Salvando…" : "Salvar alterações"}
               </button>
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                className="rounded-lg border border-white/[0.12] px-4 py-2 text-sm font-medium text-gray-300 hover:border-white/[0.2] hover:bg-white/[0.05]"
               >
                 Cancelar
               </button>
@@ -546,7 +541,7 @@ function DetailDrawer({
                 type="button"
                 onClick={handleDuplicate}
                 disabled={pending}
-                className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                className="rounded-lg border border-white/[0.12] px-4 py-2 text-sm font-medium text-gray-300 hover:border-white/[0.2] hover:bg-white/[0.05] disabled:opacity-60"
               >
                 Duplicar torneio
               </button>
@@ -554,7 +549,7 @@ function DetailDrawer({
                 type="button"
                 onClick={handleDelete}
                 disabled={pending}
-                className="ml-auto rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/40"
+                className="ml-auto rounded-lg border border-red-500/30 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 disabled:opacity-60"
               >
                 Excluir torneio
               </button>
@@ -568,25 +563,27 @@ function DetailDrawer({
 
 function DrawerField({ field, value }: { field: FieldMeta; value: CellValue }) {
   const cls =
-    "w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-zinc-500 disabled:opacity-70 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100";
+    "w-full rounded-lg border border-white/[0.12] bg-white/[0.03] px-2 py-1.5 text-sm text-gray-100 outline-none focus:border-white/[0.3] disabled:opacity-70";
 
   if (field.kind === "bool") {
     return (
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" name={field.key} defaultChecked={Boolean(value)} className="h-4 w-4" />
-        <span className="text-zinc-700 dark:text-zinc-300">{field.label}</span>
+        <span className="text-gray-300">{field.label}</span>
       </label>
     );
   }
 
   return (
     <label className="flex flex-col gap-1 text-sm">
-      <span className="font-medium text-zinc-600 dark:text-zinc-400">{field.label}</span>
+      <span className="font-medium text-gray-400">{field.label}</span>
       {field.kind === "select" ? (
         <select name={field.key} defaultValue={selectDisplayValue(field.key, value)} className={cls}>
-          <option value="">—</option>
+          <option value="" className="bg-[#121316]">
+            —
+          </option>
           {field.options?.map((opt) => (
-            <option key={opt} value={opt}>
+            <option key={opt} value={opt} className="bg-[#121316]">
               {field.key === "dayOfWeek" ? ptWeekday(opt) : opt}
             </option>
           ))}

@@ -161,10 +161,8 @@ export default async function GradePage({
     <div className="mx-auto max-w-full">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
-            Grade de Torneios
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          <h1 className="text-2xl font-semibold text-white">Grade de Torneios</h1>
+          <p className="mt-1 text-sm text-gray-500">
             Base: USD e GMT-3. Cada torneio é único (editado por data). Edição
             inline nas colunas principais; use ⋯ para os demais campos.
           </p>
@@ -172,7 +170,7 @@ export default async function GradePage({
         {canEdit ? (
           <Link
             href={`/admin/grade?week=${nextMonthWeekISO}&day=${nextMonthFirstDayEn}`}
-            className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-500"
             title="Vai ao mês seguinte (em branco) para construí-lo dia a dia"
           >
             + Criar mês seguinte
@@ -183,22 +181,22 @@ export default async function GradePage({
       {/* Navegação por semana */}
       <div className="mt-4 flex items-center justify-between gap-2">
         <WeekNavButton href={`/admin/grade?week=${isoDayUTC(prevWeek)}`} enabled={hasPrev} label="‹ Semana anterior" />
-        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Semana {weekLabel}</span>
+        <span className="text-sm font-medium text-gray-300">Semana {weekLabel}</span>
         <WeekNavButton href={`/admin/grade?week=${isoDayUTC(nextWeek)}`} enabled={hasNext} label="Próxima semana ›" />
       </div>
 
       {/* Export Excel (leitura — ADMIN e OPERACIONAL) */}
       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-zinc-500 dark:text-zinc-400">Exportar esta semana:</span>
+        <span className="text-gray-500">Exportar esta semana:</span>
         <a
           href={`/admin/grade/export?from=${isoDayUTC(weekStart)}&to=${isoDayUTC(new Date(weekEnd.getTime() - DAY_MS))}&format=horizontal`}
-          className="rounded-md border border-zinc-300 px-3 py-1.5 font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="rounded-lg border border-white/[0.12] px-3 py-1.5 font-medium text-gray-300 transition-colors hover:border-white/[0.2] hover:bg-white/[0.04]"
         >
           ⬇ Horizontal (base)
         </a>
         <a
           href={`/admin/grade/export?from=${isoDayUTC(weekStart)}&to=${isoDayUTC(new Date(weekEnd.getTime() - DAY_MS))}&format=vertical`}
-          className="rounded-md border border-zinc-300 px-3 py-1.5 font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="rounded-lg border border-white/[0.12] px-3 py-1.5 font-medium text-gray-300 transition-colors hover:border-white/[0.2] hover:bg-white/[0.04]"
         >
           ⬇ Vertical (transposto)
         </a>
@@ -207,7 +205,7 @@ export default async function GradePage({
       {/* Painel de meses — arquivo/histórico */}
       {months.length > 0 ? (
         <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-          <span className="text-zinc-500 dark:text-zinc-400">Meses:</span>
+          <span className="text-gray-500">Meses:</span>
           {months.map((m) => {
             const isArchived = m.total > 0 && m.archived === m.total;
             const toggle = setMonthArchived.bind(null, m.ym, !isArchived);
@@ -215,10 +213,10 @@ export default async function GradePage({
               <span
                 key={m.ym}
                 className={
-                  "inline-flex items-center gap-2 rounded-md border px-2 py-1 " +
+                  "inline-flex items-center gap-2 rounded-lg border px-2 py-1 " +
                   (isArchived
-                    ? "border-zinc-300 bg-zinc-100 text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400"
-                    : "border-zinc-300 text-zinc-700 dark:border-zinc-700 dark:text-zinc-300")
+                    ? "border-white/[0.08] bg-white/[0.03] text-gray-500"
+                    : "border-white/[0.12] text-gray-300")
                 }
               >
                 <Link href={`/admin/grade?week=${isoDayUTC(startOfWeekUTC(new Date(m.ym + "-01T00:00:00Z")))}`} className="font-medium hover:underline">
@@ -231,8 +229,8 @@ export default async function GradePage({
                       className={
                         "rounded px-1.5 py-0.5 text-xs font-medium " +
                         (isArchived
-                          ? "text-emerald-700 hover:bg-emerald-100 dark:text-emerald-400 dark:hover:bg-emerald-900/40"
-                          : "text-amber-700 hover:bg-amber-100 dark:text-amber-400 dark:hover:bg-amber-900/40")
+                          ? "text-emerald-400 hover:bg-emerald-500/10"
+                          : "text-amber-400 hover:bg-amber-500/10")
                       }
                       title={isArchived ? "Reabrir no portal" : "Fechar mês (sai do portal, vira histórico)"}
                     >
@@ -247,13 +245,13 @@ export default async function GradePage({
       ) : null}
 
       {!canEdit ? (
-        <p className="mt-4 rounded-md bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+        <p className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
           Modo somente leitura (Operacional). Você vê todos os dados e cálculos,
           mas não pode editar.
         </p>
       ) : null}
 
-      <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mt-4 text-sm text-gray-500">
         {tournaments.length} torneios nesta semana.
       </p>
 
@@ -271,16 +269,16 @@ export default async function GradePage({
 }
 
 function WeekNavButton({ href, enabled, label }: { href: string; enabled: boolean; label: string }) {
-  const cls = "rounded-md border px-3 py-1.5 text-sm font-medium transition-colors";
+  const cls = "rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors";
   if (!enabled) {
     return (
-      <span className={`${cls} cursor-not-allowed border-zinc-200 text-zinc-300 dark:border-zinc-800 dark:text-zinc-700`}>
+      <span className={`${cls} cursor-not-allowed border-white/[0.06] text-gray-600`}>
         {label}
       </span>
     );
   }
   return (
-    <Link href={href} className={`${cls} border-zinc-300 text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800`}>
+    <Link href={href} className={`${cls} border-white/[0.12] text-gray-300 hover:border-white/[0.2] hover:bg-white/[0.04]`}>
       {label}
     </Link>
   );

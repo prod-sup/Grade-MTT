@@ -9,9 +9,9 @@ const ROLE_BADGE: Record<string, string> = {
 };
 
 const ROLE_BADGE_CLS: Record<string, string> = {
-  ADMIN: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
-  MARKETING: "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
-  OPERACIONAL: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+  ADMIN: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
+  MARKETING: "bg-violet-500/10 text-violet-300 border border-violet-500/20",
+  OPERACIONAL: "bg-amber-500/10 text-amber-300 border border-amber-500/20",
 };
 
 export default async function AdminLayout({
@@ -24,29 +24,23 @@ export default async function AdminLayout({
   const user = await requireUser();
 
   return (
-    <div className="flex min-h-screen bg-zinc-100 dark:bg-black">
+    <div className="flex min-h-screen bg-[#0b0c0e] text-white">
       {/* Sidebar */}
-      <aside className="flex w-60 flex-col justify-between border-r border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+      <aside className="flex w-60 flex-col justify-between border-r border-white/[0.08] bg-[#121316] p-4">
         <div className="flex flex-col gap-6">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
               Grade MTT
             </p>
-            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-              Backoffice
-            </p>
+            <p className="text-sm font-semibold text-white">Backoffice</p>
           </div>
           <AdminNav role={user.role} />
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+        <div className="flex flex-col gap-3 border-t border-white/[0.08] pt-4">
           <div className="text-sm">
-            <p className="truncate font-medium text-zinc-900 dark:text-zinc-100">
-              {user.name}
-            </p>
-            <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
-              {user.email}
-            </p>
+            <p className="truncate font-medium text-gray-200">{user.name}</p>
+            <p className="truncate text-xs text-gray-500">{user.email}</p>
             <span
               className={
                 "mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium " +
@@ -60,7 +54,7 @@ export default async function AdminLayout({
           <form action={logout}>
             <button
               type="submit"
-              className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className="w-full rounded-lg border border-white/[0.1] px-3 py-2 text-sm font-medium text-gray-400 transition-colors hover:border-white/[0.2] hover:text-white"
             >
               Sair
             </button>
@@ -69,7 +63,7 @@ export default async function AdminLayout({
       </aside>
 
       {/* Conteúdo */}
-      <main className="flex-1 overflow-x-auto p-6">{children}</main>
+      <main className="flex-1 overflow-x-auto bg-[#0b0c0e] p-6">{children}</main>
     </div>
   );
 }

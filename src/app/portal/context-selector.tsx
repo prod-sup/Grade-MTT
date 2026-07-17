@@ -34,8 +34,8 @@ export function ContextSelector({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <label className="flex items-center gap-1 text-sm">
-        <span className="text-zinc-500 dark:text-zinc-400">Moeda</span>
+      <label className="flex items-center gap-1.5 text-sm">
+        <span className="text-xs uppercase tracking-wide text-gray-500">Moeda</span>
         <select
           value={handicapId}
           disabled={pending}
@@ -46,7 +46,7 @@ export function ContextSelector({
           className={selectCls}
         >
           {handicaps.map((h) => (
-            <option key={h.id} value={h.id}>
+            <option key={h.id} value={h.id} className="bg-[#121316] text-gray-100">
               {h.country}
               {h.currencyLabel ? ` (${h.currencyLabel})` : ""}
             </option>
@@ -54,8 +54,8 @@ export function ContextSelector({
         </select>
       </label>
 
-      <label className="flex items-center gap-1 text-sm">
-        <span className="text-zinc-500 dark:text-zinc-400">Fuso</span>
+      <label className="flex items-center gap-1.5 text-sm">
+        <span className="text-xs uppercase tracking-wide text-gray-500">Fuso</span>
         <select
           value={fuso}
           disabled={pending}
@@ -66,7 +66,7 @@ export function ContextSelector({
           className={selectCls}
         >
           {fusos.map((f) => (
-            <option key={f.value} value={f.value}>
+            <option key={f.value} value={f.value} className="bg-[#121316] text-gray-100">
               {f.label}
             </option>
           ))}
@@ -77,4 +77,4 @@ export function ContextSelector({
 }
 
 const selectCls =
-  "rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-zinc-500 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100";
+  "rounded-lg border border-white/[0.12] bg-white/[0.03] px-2 py-1.5 text-sm text-gray-200 outline-none transition-colors focus:border-[#d4af37]/50 disabled:opacity-60";

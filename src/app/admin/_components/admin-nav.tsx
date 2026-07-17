@@ -10,6 +10,7 @@ const ITEMS = [
   { href: "/admin/handicaps", label: "Handicaps", roles: ["ADMIN", "OPERACIONAL", "MARKETING"] },
   { href: "/admin/users", label: "Check-ins (Portal)", roles: ["ADMIN", "OPERACIONAL", "MARKETING"] },
   { href: "/admin/marketing", label: "Marketing", roles: ["ADMIN", "MARKETING"] },
+  { href: "/admin/partners", label: "Parceiros", roles: ["ADMIN", "MARKETING"] },
 ] as const;
 
 export function AdminNav({ role }: { role: string }) {

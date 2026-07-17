@@ -1,58 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser, canManageMarketing } from "@/lib/auth/dal";
-import { formatMoney, ptWeekday } from "@/lib/conversion";
-import {
-  formatBlinds,
-  formatCompactNumber,
-  formatLateReg,
-  formatModality,
-  formatStack,
-} from "@/lib/flyer/format";
-import type { FlyerTournament } from "@/lib/flyer/types";
+import { toFlyerTournament } from "@/lib/flyer/format";
 import { MarketingManager, type BannerRow } from "./marketing-manager";
 
 const DAY_MS = 86_400_000;
 // Janela de torneios oferecidos para compor um flyer novo (próximos 14 dias).
 const HORIZON_DAYS = 14;
-
-function formatDateUTC(d: Date): string {
-  const dd = String(d.getUTCDate()).padStart(2, "0");
-  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
-  return `${dd}/${mm}/${d.getUTCFullYear()}`;
-}
-
-function toFlyerTournament(t: {
-  id: string;
-  eventDate: Date | null;
-  dayOfWeek: string;
-  startTime: string;
-  shortName: string | null;
-  name: string;
-  koType: string | null;
-  addon: number | null;
-  gtd: number | null;
-  buyIn: number | null;
-  lateRegLevels: number | null;
-  lateRegTime: string | null;
-  blindsEarly: number | null;
-  stackInicial: number | null;
-}): FlyerTournament {
-  return {
-    id: t.id,
-    dateLabel: t.eventDate ? formatDateUTC(t.eventDate) : "—",
-    weekdayLabel: ptWeekday(t.dayOfWeek),
-    name: t.shortName ?? t.name,
-    modality: formatModality(t.koType, t.addon),
-    gtdCompact: formatCompactNumber(t.gtd),
-    // Painel do Admin trabalha na BASE (USD / GMT-3) — sem conversão de visitante.
-    buyIn: formatMoney(t.buyIn, "USD"),
-    startTime: t.startTime,
-    lateReg: formatLateReg(t.lateRegLevels, t.lateRegTime),
-    blinds: formatBlinds(t.blindsEarly),
-    stack: formatStack(t.stackInicial),
-    currencyLabel: "USD",
-  };
-}
 
 export default async function MarketingPage() {
   const user = await requireUser();

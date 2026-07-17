@@ -253,3 +253,96 @@ model MarketingBanner {
   @@index([active])
   @@index([seriesName])
 }
+
+// ---------------------------------------------------------------------------
+// PartnerAccount — Identidade própria dos Parceiros (Ligas/Clubes/Agentes)
+// ---------------------------------------------------------------------------
+// Domínio SEPARADO do backoffice (User): parceiros são contas externas de
+// self-service (cadastro por convite, sessão/cookie próprios — ver
+// src/lib/partner/), não staff com RBAC sobre a grade. `active` é o
+// interruptor de conta (kill-switch do admin); é independente do status de
+// aprovação da marca em BrandSettings — um parceiro pode estar `active` e
+// com a marca REJECTED (continua logado, vê o motivo, pode reenviar).
+model PartnerAccount {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String? // null até completar o signup (convite ainda não usado)
+  contactName  String // nome do responsável/contato
+  clubName     String // nome do clube/liga/agente (exibição no admin)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  brand   BrandSettings?
+  invites PartnerInvite[]
+  resets  PartnerPasswordReset[]
+
+  @@index([active])
+}
+
+// ---------------------------------------------------------------------------
+// PartnerInvite — Pré-aprovação de e-mail para o signup gated por convite
+// ---------------------------------------------------------------------------
+// Cadastro de parceiro não é aberto: o Admin/Marketing convida o e-mail
+// primeiro (cria este registro + envia o link) e só então o convidado
+// consegue completar o signup em /partner/signup?token=...
+model PartnerInvite {
+  id        String    @id @default(cuid())
+  email     String // e-mail convidado (minúsculo, trim) — não único: reenvio gera novo token
+  token     String    @unique // token opaco (randomBytes hex) usado na URL de signup
+  expiresAt DateTime
+  usedAt    DateTime?
+  invitedBy String? // User.id (staff) que convidou — sem FK: domínio separado do backoffice
+
+  // Preenchido quando o convite é consumido (aponta pra conta criada).
+  partnerAccountId String?
+  partnerAccount   PartnerAccount? @relation(fields: [partnerAccountId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([expiresAt])
+}
+
+// ---------------------------------------------------------------------------
+// PartnerPasswordReset — Token de "esqueci minha senha" (uso único)
+// ---------------------------------------------------------------------------
+model PartnerPasswordReset {
+  id               String         @id @default(cuid())
+  token            String         @unique
+  partnerAccountId String
+  partnerAccount   PartnerAccount @relation(fields: [partnerAccountId], references: [id], onDelete: Cascade)
+  expiresAt        DateTime
+  used             Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+
+  @@index([partnerAccountId])
+  @@index([expiresAt])
+}
+
+// ---------------------------------------------------------------------------
+// BrandSettings — Marca do parceiro (logo/marca d'água/telefone) + aprovação
+// ---------------------------------------------------------------------------
+// 1:1 com PartnerAccount: reenviar a marca depois de REJECTED edita esta
+// mesma linha (volta para PENDING, limpa reviewNote/reviewedBy/reviewedAt) —
+// não existe histórico de submissões, só o estado atual. Só pode ser usada
+// para sobrepor os flyers gerados quando status = APPROVED.
+model BrandSettings {
+  id               String         @id @default(cuid())
+  partnerAccountId String         @unique
+  partnerAccount   PartnerAccount @relation(fields: [partnerAccountId], references: [id], onDelete: Cascade)
+
+  logoUrl      String? // "/uploads/partners/<id>/logo.png"
+  watermarkUrl String? // "/uploads/partners/<id>/watermark.png"
+  phoneText    String? // telefone/ID do clube exibido no flyer (texto livre, curto)
+
+  status     String    @default("PENDING") // "PENDING" | "APPROVED" | "REJECTED"
+  reviewNote String? // motivo digitado pelo admin ao rejeitar (ou observação)
+  reviewedBy String? // User.id (staff) que decidiu — sem FK: domínio separado
+  reviewedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}

@@ -24,6 +24,18 @@ export const FLYER_LAYOUT_LABELS: Record<FlyerLayout, string> = {
 
 export const FLYER_LAYOUT_ORDER: readonly FlyerLayout[] = ["SINGLE", "DOUBLE", "TRIPLE", "LIST"];
 
+/**
+ * Camada de marca de um Parceiro sobreposta ao flyer, só aplicada quando sua
+ * `BrandSettings.status` é APPROVED. Imagens vêm como dataURL (não como URL
+ * `/uploads/...`) para a captura via `html-to-image` nunca depender de um
+ * fetch de rede — ver `src/components/flyer/stage.tsx`.
+ */
+export interface PartnerOverlay {
+  logoDataUrl?: string;
+  watermarkDataUrl?: string;
+  phoneText?: string;
+}
+
 /** Dados de um torneio já prontos para injeção nas cápsulas do flyer. */
 export interface FlyerTournament {
   id: string;

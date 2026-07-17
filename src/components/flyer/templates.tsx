@@ -4,11 +4,75 @@
  * stage de captura (`stage.tsx`) e convertidos em PNG via html-to-image.
  * Largura fixa em px (não responsiva): é a imagem final a ser baixada.
  */
-import type { FlyerLayout, FlyerTournament } from "@/lib/flyer/types";
+import type { FlyerLayout, FlyerTournament, PartnerOverlay } from "@/lib/flyer/types";
 
 const CANVAS_WIDTH = 1000;
 const CANVAS_BG = "#0b0b0f";
 const GOLD = "#f2b544";
+
+/** Fundo relativo comum aos 4 layouts — permite ancorar o overlay do parceiro. */
+const CANVAS_STYLE: React.CSSProperties = {
+  width: CANVAS_WIDTH,
+  background: CANVAS_BG,
+  position: "relative",
+};
+
+/**
+ * Marca do parceiro sobreposta ao flyer (logo + marca d'água + telefone/ID),
+ * renderizada como último filho pra ficar acima do conteúdo. Imagens chegam
+ * como dataURL (ver `PartnerOverlay`) — nunca `/uploads/...` direto, pra
+ * `html-to-image` não depender de um fetch de rede durante a captura.
+ */
+function PartnerOverlayLayer({ overlay }: { overlay?: PartnerOverlay }) {
+  if (!overlay) return null;
+  const { logoDataUrl, watermarkDataUrl, phoneText } = overlay;
+  if (!logoDataUrl && !watermarkDataUrl && !phoneText) return null;
+
+  return (
+    <div style={{ position: "absolute", inset: 0, zIndex: 5, pointerEvents: "none" }} aria-hidden>
+      {watermarkDataUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={watermarkDataUrl}
+          alt=""
+          decoding="sync"
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            opacity: 0.14,
+          }}
+        />
+      ) : null}
+      {logoDataUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={logoDataUrl}
+          alt=""
+          decoding="sync"
+          style={{ position: "absolute", bottom: 16, left: 16, height: 48, objectFit: "contain" }}
+        />
+      ) : null}
+      {phoneText ? (
+        <span
+          style={{
+            position: "absolute",
+            bottom: 18,
+            right: 20,
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: "0.05em",
+            color: GOLD,
+          }}
+        >
+          {phoneText}
+        </span>
+      ) : null}
+    </div>
+  );
+}
 
 function Header() {
   return (
@@ -80,23 +144,24 @@ function Capsule({ t, compact = false }: { t: FlyerTournament; compact?: boolean
   );
 }
 
-function SingleFlyer({ items }: { items: FlyerTournament[] }) {
+function SingleFlyer({ items, overlay }: { items: FlyerTournament[]; overlay?: PartnerOverlay }) {
   const t = items[0];
   if (!t) return null;
   return (
-    <div style={{ width: CANVAS_WIDTH, background: CANVAS_BG }} className="flex flex-col text-white">
+    <div style={CANVAS_STYLE} className="flex flex-col text-white">
       <Header />
       <div className="flex flex-1 flex-col justify-center px-10 py-14">
         <Capsule t={t} />
       </div>
       <Footer />
+      <PartnerOverlayLayer overlay={overlay} />
     </div>
   );
 }
 
-function DoubleFlyer({ items }: { items: FlyerTournament[] }) {
+function DoubleFlyer({ items, overlay }: { items: FlyerTournament[]; overlay?: PartnerOverlay }) {
   return (
-    <div style={{ width: CANVAS_WIDTH, background: CANVAS_BG }} className="flex flex-col text-white">
+    <div style={CANVAS_STYLE} className="flex flex-col text-white">
       <Header />
       <div className="flex flex-1 flex-col gap-5 px-10 py-10">
         {items.slice(0, 2).map((t) => (
@@ -104,13 +169,14 @@ function DoubleFlyer({ items }: { items: FlyerTournament[] }) {
         ))}
       </div>
       <Footer />
+      <PartnerOverlayLayer overlay={overlay} />
     </div>
   );
 }
 
-function TripleFlyer({ items }: { items: FlyerTournament[] }) {
+function TripleFlyer({ items, overlay }: { items: FlyerTournament[]; overlay?: PartnerOverlay }) {
   return (
-    <div style={{ width: CANVAS_WIDTH, background: CANVAS_BG }} className="flex flex-col text-white">
+    <div style={CANVAS_STYLE} className="flex flex-col text-white">
       <Header />
       <div className="flex flex-1 flex-col gap-4 px-10 py-10">
         {items.slice(0, 3).map((t) => (
@@ -118,14 +184,15 @@ function TripleFlyer({ items }: { items: FlyerTournament[] }) {
         ))}
       </div>
       <Footer />
+      <PartnerOverlayLayer overlay={overlay} />
     </div>
   );
 }
 
-function ListFlyer({ items }: { items: FlyerTournament[] }) {
+function ListFlyer({ items, overlay }: { items: FlyerTournament[]; overlay?: PartnerOverlay }) {
   const rows = items.slice(0, 12);
   return (
-    <div style={{ width: CANVAS_WIDTH, background: CANVAS_BG }} className="flex flex-col text-white">
+    <div style={CANVAS_STYLE} className="flex flex-col text-white">
       <Header />
       <div className="px-10 py-10">
         <h2 className="mb-5 text-2xl font-bold uppercase tracking-wide" style={{ color: GOLD }}>
@@ -157,11 +224,15 @@ function ListFlyer({ items }: { items: FlyerTournament[] }) {
         </table>
       </div>
       <Footer />
+      <PartnerOverlayLayer overlay={overlay} />
     </div>
   );
 }
 
-export const FLYER_RENDERERS: Record<FlyerLayout, (props: { items: FlyerTournament[] }) => React.ReactElement | null> = {
+export const FLYER_RENDERERS: Record<
+  FlyerLayout,
+  (props: { items: FlyerTournament[]; overlay?: PartnerOverlay }) => React.ReactElement | null
+> = {
   SINGLE: SingleFlyer,
   DOUBLE: DoubleFlyer,
   TRIPLE: TripleFlyer,

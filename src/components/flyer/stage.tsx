@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toPng } from "html-to-image";
-import type { FlyerLayout, FlyerTournament } from "@/lib/flyer/types";
+import type { FlyerLayout, FlyerTournament, PartnerOverlay } from "@/lib/flyer/types";
 import { FLYER_RENDERERS } from "./templates";
 
 interface FlyerRequest {
   layout: FlyerLayout;
   items: FlyerTournament[];
+  overlay?: PartnerOverlay;
 }
 
 /**
@@ -27,10 +28,13 @@ export function useFlyerStage(
   const [busy, setBusy] = useState(false);
   const stageRef = useRef<HTMLDivElement | null>(null);
 
-  const generate = useCallback((layout: FlyerLayout, items: FlyerTournament[]) => {
-    if (items.length === 0) return;
-    setRequest({ layout, items });
-  }, []);
+  const generate = useCallback(
+    (layout: FlyerLayout, items: FlyerTournament[], overlay?: PartnerOverlay) => {
+      if (items.length === 0) return;
+      setRequest({ layout, items, overlay });
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!request) return;
@@ -65,7 +69,7 @@ export function useFlyerStage(
   const stage = request ? (
     <div style={{ position: "fixed", top: 0, left: -99999, zIndex: -1 }} aria-hidden>
       <div ref={stageRef}>
-        <FlyerCapture layout={request.layout} items={request.items} />
+        <FlyerCapture layout={request.layout} items={request.items} overlay={request.overlay} />
       </div>
     </div>
   ) : null;
@@ -73,7 +77,7 @@ export function useFlyerStage(
   return { generate, busy, stage };
 }
 
-function FlyerCapture({ layout, items }: FlyerRequest) {
+function FlyerCapture({ layout, items, overlay }: FlyerRequest) {
   const Renderer = FLYER_RENDERERS[layout];
-  return <Renderer items={items} />;
+  return <Renderer items={items} overlay={overlay} />;
 }
